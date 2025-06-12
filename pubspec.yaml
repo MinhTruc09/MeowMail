@@ -1,0 +1,44 @@
+name: mewmail
+description: "A new Flutter project."
+publish_to: 'none'
+
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.7.2
+
+dependencies:
+  flutter:
+    sdk: flutter
+  firebase_core: ^3.13.1
+  firebase_auth: ^5.5.4
+  cloud_firestore: ^5.6.8
+  firebase_messaging: ^15.2.6
+  firebase_storage: ^12.4.6
+  http: ^1.4.0
+  shared_preferences: ^2.5.3
+  flutter_secure_storage: ^9.2.4
+  cupertino_icons: ^1.0.8
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^5.0.0
+  flutter_launcher_icons: ^0.14.3
+
+flutter_icons:
+  android: true
+  ios: true
+  windows:
+    generate: true
+    icon_size: 48
+  image_path: "assets/images/icon.png"
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/images/
+  fonts:
+    - family: Borel
+      fonts:
+        - asset: assets/fonts/Borel-Regular.ttf

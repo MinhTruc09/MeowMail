@@ -1,0 +1,54 @@
+{
+  "project_info": {
+    "project_number": "164434614544",
+    "project_id": "mmail-1e27d",
+    "storage_bucket": "mmail-1e27d.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:164434614544:android:281deab0410069a58a6d95",
+        "android_client_info": {
+          "package_name": "com.example.mewmail"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "164434614544-atj12jdvokbtl9dbgk3lamqsjbb3psqp.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.mewmail",
+            "certificate_hash": "86e2454ce3340bbc02aebc76893b7e12014d998f"
+          }
+        },
+        {
+          "client_id": "164434614544-ubvd3kbrmbkqtnjjitpld68hn3jloopb.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBwhYZNrfjNaqASOJ0jYuotMvDj0dO1zoY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "164434614544-ubvd3kbrmbkqtnjjitpld68hn3jloopb.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "164434614544-274kp69hg4jugbn7metk4jd5ilg6j2rn.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.mewmail"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
