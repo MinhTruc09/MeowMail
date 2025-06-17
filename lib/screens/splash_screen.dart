@@ -70,7 +70,7 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
 
     // Khi hoàn tất animation thì chuyển trang
     if (mounted) {
-      Navigator.pushReplacementNamed(context, '/signinscreen');
+      Navigator.pushReplacementNamed(context, '/loginscreen');
     }
   }
 

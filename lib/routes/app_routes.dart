@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:mewmail/screens/home_screen.dart';
-import 'package:mewmail/screens/signin_screen.dart';
-import 'package:mewmail/screens/signup_screen.dart';
+import 'package:mewmail/screens/login_screen.dart';
+import 'package:mewmail/screens/register_screen.dart';
 import 'package:mewmail/screens/splash_screen.dart';
 
 final Map<String, WidgetBuilder> appRoutes = {
   '/homescreen': (context) => const HomeScreen(),
-  '/signinscreen': (context) => const SignInScreen(),
-  '/signupscreen': (context) => const SignUpScreen(),
+  '/loginscreen': (context) => const LoginScreen(),
+  '/registerscreen': (context) => const RegisterScreen(),
   '/splashscreen': (context) => const SplashScreen(),
 };
 
@@ -18,11 +18,11 @@ Route<dynamic> onGenerateRoute(RouteSettings settings) {
     case '/homescreen':
       page = const HomeScreen();
       break;
-    case '/signinscreen':
-      page = const SignInScreen();
+    case '/loginscreen':
+      page = const LoginScreen();
       break;
-    case '/signupscreen':
-      page = const SignUpScreen();
+    case '/registerscreen':
+      page = const RegisterScreen();
       break;
     case '/splashscreen':
       page = const SplashScreen();

@@ -11,38 +11,32 @@ class AppTheme {
       scaffoldBackgroundColor: primaryWhite,
       primaryColor: primaryBlack,
       hintColor: primaryYellow,
-      appBarTheme: const AppBarTheme(
-        backgroundColor: primaryBlack,
-        foregroundColor: primaryYellow,
-        elevation: 0,
-      ),
+      fontFamily: 'Borel',
       textTheme: const TextTheme(
         headlineLarge: TextStyle(
-          fontFamily: 'Borel',
           fontSize: 40,
-          // do the spacing more
           letterSpacing: 4,
           fontWeight: FontWeight.bold,
-          // do the underline
           decoration: TextDecoration.underline,
           decorationColor: primaryBlack,
           decorationThickness: 1.5,
           color: primaryBlack,
         ),
         bodyLarge: TextStyle(
-          fontFamily: 'Borel',
           fontSize: 25,
           fontWeight: FontWeight.w400,
           color: primaryYellow,
         ),
         bodyMedium: TextStyle(
-          fontFamily: 'Borel',
           fontSize: 16,
           fontWeight: FontWeight.w400,
           color: primaryBlack,
         ),
+        labelLarge: TextStyle(
+          fontSize: 14,
+          color: primaryBlack,
+        ),
       ),
-      fontFamily: 'Borel',
       iconTheme: const IconThemeData(color: primaryYellow),
       floatingActionButtonTheme: const FloatingActionButtonThemeData(
         backgroundColor: primaryYellow,
@@ -50,15 +44,35 @@ class AppTheme {
       ),
       inputDecorationTheme: const InputDecorationTheme(
         filled: true,
-        fillColor: primaryBlack,
-        border: OutlineInputBorder(),
-        hintStyle: TextStyle(color: primaryWhite),
+        fillColor: primaryYellow,
+        contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        border: OutlineInputBorder(
+          borderSide: BorderSide(color: primaryBlack, width: 2),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderSide: BorderSide(color: primaryBlack, width: 2),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderSide: BorderSide(color: primaryBlack, width: 2.5),
+        ),
+        hintStyle: TextStyle(
+          color: primaryBlack,
+          fontSize: 14,
+        ),
+        labelStyle: TextStyle(
+          color: primaryBlack,
+          fontSize: 16,
+        ),
+        prefixIconColor: primaryBlack,
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
-          backgroundColor: primaryYellow,
-          foregroundColor: primaryBlack,
+          backgroundColor: primaryBlack,
+          foregroundColor: primaryYellow,
           textStyle: const TextStyle(fontFamily: 'Borel'),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(4),
+          ),
         ),
       ),
     );
