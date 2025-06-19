@@ -12,6 +12,9 @@ class AppTheme {
       primaryColor: primaryBlack,
       hintColor: primaryYellow,
       fontFamily: 'Borel',
+      colorScheme: ColorScheme.fromSwatch().copyWith(
+        primary: primaryBlack,
+      ),
       textTheme: const TextTheme(
         headlineLarge: TextStyle(
           fontSize: 40,
@@ -28,8 +31,8 @@ class AppTheme {
           color: primaryYellow,
         ),
         bodyMedium: TextStyle(
-          fontSize: 16,
-          fontWeight: FontWeight.w400,
+          fontSize: 20,
+          fontWeight: FontWeight.w700,
           color: primaryBlack,
         ),
         labelLarge: TextStyle(
@@ -45,7 +48,7 @@ class AppTheme {
       inputDecorationTheme: const InputDecorationTheme(
         filled: true,
         fillColor: primaryYellow,
-        contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         border: OutlineInputBorder(
           borderSide: BorderSide(color: primaryBlack, width: 2),
         ),
@@ -64,12 +67,18 @@ class AppTheme {
           fontSize: 16,
         ),
         prefixIconColor: primaryBlack,
+        iconColor: primaryBlack,
+        focusColor: primaryBlack,
+        floatingLabelStyle: TextStyle(color: primaryBlack),
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
           backgroundColor: primaryBlack,
           foregroundColor: primaryYellow,
-          textStyle: const TextStyle(fontFamily: 'Borel'),
+          textStyle: const TextStyle(
+            fontFamily: 'Borel',
+            fontSize: 16,
+          ),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(4),
           ),

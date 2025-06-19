@@ -5,26 +5,26 @@ import 'package:mewmail/screens/register_screen.dart';
 import 'package:mewmail/screens/splash_screen.dart';
 
 final Map<String, WidgetBuilder> appRoutes = {
-  '/homescreen': (context) => const HomeScreen(),
-  '/loginscreen': (context) => const LoginScreen(),
-  '/registerscreen': (context) => const RegisterScreen(),
-  '/splashscreen': (context) => const SplashScreen(),
+  '/home': (context) => const HomeScreen(),
+  '/login': (context) => const LoginScreen(),
+  '/register': (context) => const RegisterScreen(),
+  '/splash': (context) => const SplashScreen(),
 };
 
 Route<dynamic> onGenerateRoute(RouteSettings settings) {
   late Widget page;
 
   switch (settings.name) {
-    case '/homescreen':
+    case '/home':
       page = const HomeScreen();
       break;
-    case '/loginscreen':
+    case '/login':
       page = const LoginScreen();
       break;
-    case '/registerscreen':
+    case '/register':
       page = const RegisterScreen();
       break;
-    case '/splashscreen':
+    case '/splash':
       page = const SplashScreen();
       break;
 

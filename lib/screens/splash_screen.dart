@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:mewmail/widgets/splash_background.dart';
-import 'package:mewmail/screens/home_screen.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -18,59 +17,35 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
   late final Animation<double> _fadeOutAnimation;
   late final Animation<double> _exitScaleAnimation;
 
-  bool _showLogo = true;
-
   @override
   void initState() {
     super.initState();
 
-    // Xoay nhẹ
-    _rotationController = AnimationController(
-      vsync: this,
-      duration: const Duration(seconds: 2),
-    )..repeat();
+    _rotationController = AnimationController(vsync: this, duration: const Duration(seconds: 2))..repeat();
+    _scaleController = AnimationController(vsync: this, duration: const Duration(seconds: 1))..repeat(reverse: true);
+    _scaleAnimation = Tween<double>(begin: 0.95, end: 1.05).animate(CurvedAnimation(parent: _scaleController, curve: Curves.easeInOut));
 
-    // Nhấp nhô logo (zoom nhẹ)
-    _scaleController = AnimationController(
-      vsync: this,
-      duration: const Duration(seconds: 1),
-    )..repeat(reverse: true);
-
-    _scaleAnimation = Tween<double>(begin: 0.95, end: 1.05).animate(
-      CurvedAnimation(parent: _scaleController, curve: Curves.easeInOut),
-    );
-
-    // Khi loading xong
-    _exitController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 800),
-    );
-
-    _fadeOutAnimation = Tween<double>(begin: 1.0, end: 0.0).animate(
-      CurvedAnimation(parent: _exitController, curve: Curves.easeOut),
-    );
-
-    _exitScaleAnimation = Tween<double>(begin: 1.0, end: 1.2).animate(
-      CurvedAnimation(parent: _exitController, curve: Curves.easeOut),
-    );
+    _exitController = AnimationController(vsync: this, duration: const Duration(milliseconds: 800));
+    _fadeOutAnimation = Tween<double>(begin: 1.0, end: 0.0).animate(CurvedAnimation(parent: _exitController, curve: Curves.easeOut));
+    _exitScaleAnimation = Tween<double>(begin: 1.0, end: 1.2).animate(CurvedAnimation(parent: _exitController, curve: Curves.easeOut));
 
     _simulateLoading();
   }
 
   Future<void> _simulateLoading() async {
-    await Future.delayed(const Duration(seconds: 3)); // giả lập loading API
-     _rotationController.stop();
-     _scaleController.stop();
-
-    setState(() {
-      _showLogo = true;
-    });
-
+    await Future.delayed(const Duration(seconds: 3));
+    _rotationController.stop();
+    _scaleController.stop();
     await _exitController.forward();
 
-    // Khi hoàn tất animation thì chuyển trang
+    // Kiểm tra trạng thái đăng nhập
+    final isLoggedIn = false; // TODO: Thay bằng logic kiểm tra thực tế
     if (mounted) {
-      Navigator.pushReplacementNamed(context, '/loginscreen');
+      if (isLoggedIn) {
+        Navigator.pushReplacementNamed(context, '/home');
+      } else {
+        Navigator.pushReplacementNamed(context, '/login');
+      }
     }
   }
 
@@ -85,6 +60,7 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
   @override
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
+    final screenHeight = MediaQuery.of(context).size.height;
 
     return SplashBackground(
       child: Column(
@@ -112,19 +88,9 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
               );
             },
           ),
-          const SizedBox(height: 20),
-          Text(
-            'MEOW MAIL',
-            style: Theme.of(context).textTheme.headlineLarge?.copyWith(
-              fontSize: screenWidth * 0.08,
-            ),
-          ),
-          Text(
-            'Chỉ đơn giản là mail.',
-            style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-              fontSize: screenWidth * 0.045,
-            ),
-          ),
+          SizedBox(height: screenHeight * 0.025),
+          Text('MEOW MAIL', style: Theme.of(context).textTheme.headlineLarge?.copyWith(fontSize: screenWidth * 0.08)),
+          Text('Chỉ đơn giản là mail.', style: Theme.of(context).textTheme.bodyLarge?.copyWith(fontSize: screenWidth * 0.045)),
         ],
       ),
     );

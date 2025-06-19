@@ -22,7 +22,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      initialRoute: '/splashscreen',
+      initialRoute: '/splash',
       title: 'MewMail',
       theme: AppTheme.theme,
       onGenerateRoute: onGenerateRoute,
