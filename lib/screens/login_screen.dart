@@ -1,7 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:mewmail/models/user/login_request.dart';
-import 'package:mewmail/services/auth_service.dart';
-import 'package:mewmail/services/firebase_service.dart';
 import 'package:mewmail/widgets/login_background.dart';
 import 'package:mewmail/widgets/login_form_section.dart';
 

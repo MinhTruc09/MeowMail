@@ -3,6 +3,9 @@ import 'package:mewmail/widgets/theme.dart';
 import 'package:mewmail/services/firebase_service.dart';
 import 'package:mewmail/services/auth_service.dart';
 import 'package:mewmail/models/user/register_request.dart';
+import 'package:mewmail/widgets/register/register_text_field.dart';
+import 'package:mewmail/widgets/register/register_button.dart';
+import 'package:mewmail/widgets/register/register_validator.dart';
 
 class RegisterFormSection extends StatefulWidget {
   const RegisterFormSection({super.key});
@@ -19,159 +22,71 @@ class _RegisterFormSectionState extends State<RegisterFormSection> {
   bool _obscure = true;
   bool _obscureRe = true;
   bool _loading = false;
+  final _formKey = GlobalKey<FormState>();
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final screenWidth = MediaQuery.of(context).size.width;
-    final screenHeight = MediaQuery.of(context).size.height;
-    return Container(
-      width: screenWidth * 0.88,
-      padding: EdgeInsets.symmetric(horizontal: screenWidth * 0.05, vertical: screenHeight * 0.025),
-      decoration: BoxDecoration(
-        color: AppTheme.primaryYellow,
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text("Email:", style: theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.bold, color: Colors.black, fontFamily: 'Borel')),
-          const SizedBox(height: 8),
-          TextField(
-            controller: _emailController,
-            style: const TextStyle(color: Colors.black, fontFamily: 'Borel'),
-            cursorColor: Colors.black,
-            decoration: InputDecoration(
-              hintText: "abc@gmail.com",
-              hintStyle: const TextStyle(color: Colors.black54, fontStyle: FontStyle.italic, fontFamily: 'Borel'),
-              filled: true,
-              fillColor: Colors.transparent,
-              contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(color: Colors.black12, width: 1),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final isMobile = constraints.maxWidth < 600;
+        final containerWidth = isMobile ? constraints.maxWidth * 0.95 : 400.0;
+        return Center(
+          child: SingleChildScrollView(
+            child: Container(
+              width: containerWidth,
+              padding: EdgeInsets.symmetric(
+                horizontal: isMobile ? 16 : 32,
+                vertical: isMobile ? 16 : 32,
               ),
-              enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(color: Colors.black12, width: 1),
+              decoration: BoxDecoration(
+                color: AppTheme.primaryYellow,
+                borderRadius: BorderRadius.circular(20),
               ),
-              focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(color: Colors.black, width: 1),
-              ),
-            ),
-          ),
-          const SizedBox(height: 12),
-          Text("Họ và tên:", style: theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.bold, color: Colors.black, fontFamily: 'Borel')),
-          const SizedBox(height: 8),
-          TextField(
-            controller: _nameController,
-            style: const TextStyle(color: Colors.black, fontFamily: 'Borel'),
-            cursorColor: Colors.black,
-            decoration: InputDecoration(
-              hintText: "Nguyễn Văn A",
-              hintStyle: const TextStyle(color: Colors.black54, fontStyle: FontStyle.italic, fontFamily: 'Borel'),
-              filled: true,
-              fillColor: Colors.transparent,
-              contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(color: Colors.black12, width: 1),
-              ),
-              enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(color: Colors.black12, width: 1),
-              ),
-              focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(color: Colors.black, width: 1),
-              ),
-            ),
-          ),
-          const SizedBox(height: 12),
-          Text("Mật khẩu:", style: theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.bold, color: Colors.black, fontFamily: 'Borel')),
-          const SizedBox(height: 8),
-          TextField(
-            controller: _passwordController,
-            obscureText: _obscure,
-            style: const TextStyle(color: Colors.black, fontFamily: 'Borel'),
-            cursorColor: Colors.black,
-            decoration: InputDecoration(
-              hintText: "************",
-              hintStyle: const TextStyle(color: Colors.black54, fontStyle: FontStyle.italic, fontFamily: 'Borel'),
-              filled: true,
-              fillColor: Colors.transparent,
-              contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(color: Colors.black12, width: 1),
-              ),
-              enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(color: Colors.black12, width: 1),
-              ),
-              focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(color: Colors.black, width: 1),
-              ),
-              suffixIcon: IconButton(
-                icon: Icon(_obscure ? Icons.visibility_off : Icons.visibility, color: Colors.black54),
-                onPressed: () => setState(() => _obscure = !_obscure),
-              ),
-            ),
-          ),
-          const SizedBox(height: 12),
-          Text("Nhập lại mật khẩu:", style: theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.bold, color: Colors.black, fontFamily: 'Borel')),
-          const SizedBox(height: 8),
-          TextField(
-            controller: _rePasswordController,
-            obscureText: _obscureRe,
-            style: const TextStyle(color: Colors.black, fontFamily: 'Borel'),
-            cursorColor: Colors.black,
-            decoration: InputDecoration(
-              hintText: "************",
-              hintStyle: const TextStyle(color: Colors.black54, fontStyle: FontStyle.italic, fontFamily: 'Borel'),
-              filled: true,
-              fillColor: Colors.transparent,
-              contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(color: Colors.black12, width: 1),
-              ),
-              enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(color: Colors.black12, width: 1),
-              ),
-              focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(color: Colors.black, width: 1),
-              ),
-              suffixIcon: IconButton(
-                icon: Icon(_obscureRe ? Icons.visibility_off : Icons.visibility, color: Colors.black54),
-                onPressed: () => setState(() => _obscureRe = !_obscureRe),
-              ),
-            ),
-          ),
-          const SizedBox(height: 16),
-          SizedBox(
-            width: double.infinity,
-            height: 44,
-            child: ElevatedButton(
-              onPressed: _loading ? null : _submitRegister,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.black,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
+              child: Form(
+                key: _formKey,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    RegisterTextField(
+                      controller: _emailController,
+                      label: "Email:",
+                      hint: "abc@gmail.com",
+                      keyboardType: TextInputType.emailAddress,
+                    ),
+                    const SizedBox(height: 12),
+                    RegisterTextField(
+                      controller: _nameController,
+                      label: "Họ và tên:",
+                      hint: "Nguyễn Văn A",
+                    ),
+                    const SizedBox(height: 12),
+                    RegisterTextField(
+                      controller: _passwordController,
+                      label: "Mật khẩu:",
+                      hint: "************",
+                      obscure: _obscure,
+                      onToggleObscure: () => setState(() => _obscure = !_obscure),
+                    ),
+                    const SizedBox(height: 12),
+                    RegisterTextField(
+                      controller: _rePasswordController,
+                      label: "Nhập lại mật khẩu:",
+                      hint: "************",
+                      obscure: _obscureRe,
+                      onToggleObscure: () => setState(() => _obscureRe = !_obscureRe),
+                    ),
+                    const SizedBox(height: 16),
+                    RegisterButton(
+                      onPressed: _loading ? null : _submitRegister,
+                      loading: _loading,
+                    ),
+                  ],
                 ),
-                elevation: 0,
               ),
-              child: _loading
-                  ? const CircularProgressIndicator(color: Colors.white)
-                  : const Text("Đăng ký", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, fontFamily: 'Borel', color: Colors.white)),
             ),
           ),
-        ],
-      ),
+        );
+      },
     );
   }
 
@@ -181,15 +96,14 @@ class _RegisterFormSectionState extends State<RegisterFormSection> {
     final password = _passwordController.text.trim();
     final rePassword = _rePasswordController.text.trim();
 
-    if (email.isEmpty || name.isEmpty || password.isEmpty || rePassword.isEmpty) {
+    final emailError = validateEmail(email);
+    final nameError = validateFullName(name);
+    final passwordError = validatePassword(password);
+    final rePasswordError = validateRePassword(rePassword, password);
+
+    if (emailError != null || nameError != null || passwordError != null || rePasswordError != null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Vui lòng nhập đầy đủ thông tin!')),
-      );
-      return;
-    }
-    if (password != rePassword) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Mật khẩu không khớp!')),
+        SnackBar(content: Text(emailError ?? nameError ?? passwordError ?? rePasswordError!)),
       );
       return;
     }

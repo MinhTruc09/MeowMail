@@ -13,7 +13,7 @@ class MailService{
     const url = 'http://localhost:8080/api/mail/send';
     final uri = Uri.parse(url);
     final request = http.MultipartRequest('POST', uri);
-    request.fields['Authorization'] = 'Bearer ${data.token}';
+    request.headers['Authorization'] = 'Bearer ${data.token}';
     request.fields['receiverEmail'] = data.receiverEmail;
     request.fields['subject'] = data.subject;
     request.fields['content'] = data.content;
