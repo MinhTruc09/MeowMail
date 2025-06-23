@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:mewmail/models/user/login_request.dart';
 import 'package:mewmail/services/auth_service.dart';
-import 'package:mewmail/services/firebase_service.dart'; // thêm dòng này
 
 class LoginFormSection extends StatefulWidget {
   const LoginFormSection({super.key});
@@ -21,17 +20,23 @@ class _LoginFormSectionState extends State<LoginFormSection> {
     final email = _emailController.text.trim();
     final password = _passwordController.text.trim();
 
+    if (email.isEmpty || password.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Vui lòng nhập đầy đủ email và mật khẩu!')),
+      );
+      setState(() => _loading = false);
+      return;
+    }
+
     try {
-      // 1. Đăng nhập Firebase Auth
-      await FirebaseAuthService.signInWithEmail(email: email, password: password);
-      // 2. Đăng nhập backend API
+      // Đăng nhập backend API
       final apiResponse = await AuthService.login(LoginRequest(
         email: email,
         password: password,
       ));
 
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Chào ${apiResponse.user.username}!')),
+        SnackBar(content: Text('Chào ${apiResponse.email}!')),
       );
       Navigator.pushReplacementNamed(context, '/home');
     } catch (e) {
@@ -183,63 +188,6 @@ class _LoginFormSectionState extends State<LoginFormSection> {
               ),
             ),
           ],
-        ),
-        const SizedBox(height: 8),
-        // Nút Google
-        GestureDetector(
-          onTap: () async {
-            try {
-              final userCred = await FirebaseAuthService.signInWithGoogle();
-              final email = userCred.user?.email ?? '';
-              final tokenPassword = 'google_auth';
-              await AuthService.login(LoginRequest(email: email, password: tokenPassword));
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text('Chào mừng $email')),
-              );
-              Navigator.pushReplacementNamed(context, '/home');
-            } catch (e) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text('Google login thất bại: $e')),
-              );
-            }
-          },
-          child: Container(
-            margin: const EdgeInsets.only(top: 4),
-            padding: EdgeInsets.symmetric(
-              horizontal: screenWidth * 0.05,
-              vertical: screenHeight * 0.015,
-            ),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: Colors.blue, width: 1.2),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black12,
-                  blurRadius: 4,
-                  offset: Offset(0, 2),
-                ),
-              ],
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Image.asset('assets/images/google.png', height: screenHeight * 0.025),
-                SizedBox(width: screenWidth * 0.03),
-                Text(
-                  'ĐĂNG NHẬP BẰNG GOOGLE',
-                  style: TextStyle(
-                    fontSize: screenWidth * 0.04,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.blue[900],
-                    letterSpacing: 0.5,
-                    fontFamily: 'Borel',
-                  ),
-                ),
-              ],
-            ),
-          ),
         ),
       ],
     );

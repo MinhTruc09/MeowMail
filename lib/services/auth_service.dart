@@ -28,12 +28,26 @@ class AuthService {
     }
 
     final response = await request.send();
+    final body = await http.Response.fromStream(response);
+
+    if (body.body.isEmpty) {
+      print('Đăng ký lỗi: status=${response.statusCode}, body is empty');
+      throw Exception('Failed to register: Server trả về rỗng');
+    }
+
+    dynamic json;
+    try {
+      json = jsonDecode(body.body);
+    } catch (e) {
+      print('Đăng ký lỗi: status=${response.statusCode}, body=${body.body}');
+      throw Exception('Failed to register: Không phải JSON: ${body.body}');
+    }
+
     if (response.statusCode == 200) {
-      final body = await http.Response.fromStream(response);
-      final json = jsonDecode(body.body);
       return RegisterResponse.fromJson(json);
     } else {
-      throw Exception('Failed to register');
+      print('Đăng ký lỗi: status=${response.statusCode}, body=${body.body}');
+      throw Exception('Failed to register: ${json['message'] ?? body.body}');
     }
   }
 
@@ -47,7 +61,7 @@ class AuthService {
 
     if (response.statusCode == 200) {
       final json = jsonDecode(response.body);
-      final loginResponse = LoginResponse.fromJson(json);
+      final loginResponse = LoginResponse.fromJson(json['data']);
       await _saveAccount(loginResponse);
       return loginResponse;
     } else {
@@ -69,12 +83,11 @@ class AuthService {
       accounts = List<Map<String, dynamic>>.from(jsonDecode(raw));
     }
 
-    accounts.removeWhere((acc) => acc['email'] == response.user.email);
+    accounts.removeWhere((acc) => acc['email'] == response.email);
 
     accounts.insert(0, {
-      'email': response.user.email,
-      'username': response.user.username,
-      'token': response.token,
+      'email': response.email,
+      'token': response.accessToken,
     });
 
     if (accounts.length > 3) {
@@ -82,7 +95,7 @@ class AuthService {
     }
 
     await prefs.setString('accounts', jsonEncode(accounts));
-    await prefs.setString('token', response.token);
+    await prefs.setString('token', response.accessToken);
   }
 
   static Future<List<Map<String, dynamic>>> getRememberedAccounts() async {

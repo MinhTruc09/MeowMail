@@ -6,6 +6,8 @@ import 'package:mewmail/models/user/register_request.dart';
 import 'package:mewmail/widgets/register/register_text_field.dart';
 import 'package:mewmail/widgets/register/register_button.dart';
 import 'package:mewmail/widgets/register/register_validator.dart';
+import 'dart:io';
+import 'package:image_picker/image_picker.dart';
 
 class RegisterFormSection extends StatefulWidget {
   const RegisterFormSection({super.key});
@@ -19,10 +21,22 @@ class _RegisterFormSectionState extends State<RegisterFormSection> {
   final _nameController = TextEditingController();
   final _passwordController = TextEditingController();
   final _rePasswordController = TextEditingController();
+  final _phoneController = TextEditingController();
   bool _obscure = true;
   bool _obscureRe = true;
   bool _loading = false;
   final _formKey = GlobalKey<FormState>();
+  File? _avatarFile;
+
+  Future<void> _pickAvatar() async {
+    final picker = ImagePicker();
+    final picked = await picker.pickImage(source: ImageSource.gallery);
+    if (picked != null) {
+      setState(() {
+        _avatarFile = File(picked.path);
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -75,6 +89,37 @@ class _RegisterFormSectionState extends State<RegisterFormSection> {
                       obscure: _obscureRe,
                       onToggleObscure: () => setState(() => _obscureRe = !_obscureRe),
                     ),
+                    const SizedBox(height: 12),
+                    RegisterTextField(
+                      controller: _phoneController,
+                      label: "Số điện thoại:",
+                      hint: "0123456789",
+                      keyboardType: TextInputType.phone,
+                    ),
+                    const SizedBox(height: 12),
+                    Row(
+                      children: [
+                        _avatarFile != null
+                            ? CircleAvatar(
+                                backgroundImage: FileImage(_avatarFile!),
+                                radius: 28,
+                              )
+                            : const CircleAvatar(
+                                radius: 28,
+                                child: Icon(Icons.person, size: 32),
+                              ),
+                        const SizedBox(width: 16),
+                        ElevatedButton.icon(
+                          onPressed: _pickAvatar,
+                          icon: const Icon(Icons.image),
+                          label: const Text('Chọn ảnh đại diện'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.black,
+                            foregroundColor: Colors.white,
+                          ),
+                        ),
+                      ],
+                    ),
                     const SizedBox(height: 16),
                     RegisterButton(
                       onPressed: _loading ? null : _submitRegister,
@@ -95,33 +140,36 @@ class _RegisterFormSectionState extends State<RegisterFormSection> {
     final name = _nameController.text.trim();
     final password = _passwordController.text.trim();
     final rePassword = _rePasswordController.text.trim();
+    final phone = _phoneController.text.trim();
 
     final emailError = validateEmail(email);
     final nameError = validateFullName(name);
     final passwordError = validatePassword(password);
     final rePasswordError = validateRePassword(rePassword, password);
+    final phoneError = phone.isEmpty ? 'Vui lòng nhập số điện thoại' : null;
 
-    if (emailError != null || nameError != null || passwordError != null || rePasswordError != null) {
+    if (emailError != null || nameError != null || passwordError != null || rePasswordError != null || phoneError != null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(emailError ?? nameError ?? passwordError ?? rePasswordError!)),
+        SnackBar(content: Text(emailError ?? nameError ?? passwordError ?? rePasswordError ?? phoneError!)),
       );
       return;
     }
     setState(() => _loading = true);
     try {
-      await FirebaseAuthService.registerWithEmail(email: email, password: password, name: name);
       await AuthService.register(RegisterRequest(
         email: email,
         password: password,
         fullName: name,
-        phone: '',
-        avatar: null,
+        phone: phone,
+        avatar: _avatarFile,
       ));
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Đăng ký thành công!')),
       );
       Navigator.pushReplacementNamed(context, '/home');
-    } catch (e) {
+    } catch (e, stack) {
+      print('Đăng ký thất bại: $e');
+      print(stack);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Đăng ký thất bại: $e')),
       );
