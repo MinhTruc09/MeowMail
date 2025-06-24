@@ -42,7 +42,7 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
     final isLoggedIn = false; // TODO: Thay bằng logic kiểm tra thực tế
     if (mounted) {
       if (isLoggedIn) {
-        Navigator.pushReplacementNamed(context, '/home');
+        Navigator.pushReplacementNamed(context, '/main');
       } else {
         Navigator.pushReplacementNamed(context, '/login');
       }

@@ -87,7 +87,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                       const SizedBox(height: 12),
                       _EditProfileTextField(label: 'Số điện thoại', controller: _phoneController, keyboardType: TextInputType.phone, suffix: const Icon(Icons.flag)),
                       const SizedBox(height: 12),
-                      _GenderDropdown(value: _gender, onChanged: (v) => setState(() => _gender = v)),
+                      _GenderDropdown(value: _gender, onChanged: (v) => setState(() => _gender = v ?? _gender)),
                       const SizedBox(height: 24),
                       SizedBox(
                         width: double.infinity,
@@ -177,7 +177,7 @@ class _EditProfileTextField extends StatelessWidget {
 
 class _GenderDropdown extends StatelessWidget {
   final String value;
-  final ValueChanged<String> onChanged;
+  final ValueChanged<String?> onChanged;
   const _GenderDropdown({required this.value, required this.onChanged});
 
   @override

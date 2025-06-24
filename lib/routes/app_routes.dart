@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:mewmail/screens/home_screen.dart';
 import 'package:mewmail/screens/login_screen.dart';
+import 'package:mewmail/screens/main_screen.dart';
 import 'package:mewmail/screens/register_screen.dart';
 import 'package:mewmail/screens/splash_screen.dart';
 
@@ -9,6 +10,7 @@ final Map<String, WidgetBuilder> appRoutes = {
   '/login': (context) => const LoginScreen(),
   '/register': (context) => const RegisterScreen(),
   '/splash': (context) => const SplashScreen(),
+  '/main': (context) => const MainScreen(),
 };
 
 Route<dynamic> onGenerateRoute(RouteSettings settings) {
@@ -27,13 +29,9 @@ Route<dynamic> onGenerateRoute(RouteSettings settings) {
     case '/splash':
       page = const SplashScreen();
       break;
-
-  // Nếu cần xử lý màn có arguments thì xử lý thêm tại đây:
-  // case '/some_screen_with_data':
-  //   final args = settings.arguments as Map<String, dynamic>? ?? {};
-  //   page = SomeScreen(data: args['key']);
-  //   break;
-
+    case '/main':
+      page = const MainScreen();
+      break;
     default:
       page = const SplashScreen();
       break;
@@ -43,11 +41,8 @@ Route<dynamic> onGenerateRoute(RouteSettings settings) {
     settings: settings,
     pageBuilder: (context, animation, secondaryAnimation) => page,
     transitionsBuilder: (context, animation, secondaryAnimation, child) {
-      return FadeTransition(
-        opacity: animation,
-        child: child,
-      );
+      return FadeTransition(opacity: animation, child: child);
     },
-    transitionDuration: const Duration(milliseconds: 500),
+    transitionDuration: const Duration(milliseconds: 300),
   );
 }

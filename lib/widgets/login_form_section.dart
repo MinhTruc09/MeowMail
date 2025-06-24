@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:mewmail/models/user/login_request.dart';
 import 'package:mewmail/services/auth_service.dart';
+import 'package:mewmail/screens/forgot_screen.dart';
 
 class LoginFormSection extends StatefulWidget {
   const LoginFormSection({super.key});
@@ -130,7 +131,12 @@ class _LoginFormSectionState extends State<LoginFormSection> {
               Align(
                 alignment: Alignment.centerRight,
                 child: TextButton(
-                  onPressed: () {},
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => const ForgotScreen()),
+                    );
+                  },
                   style: TextButton.styleFrom(
                     padding: EdgeInsets.zero,
                     minimumSize: Size(0, 0),

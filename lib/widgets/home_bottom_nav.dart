@@ -1,44 +1,37 @@
 import 'package:flutter/material.dart';
+import 'theme.dart';
 
-class HomeBottomNav extends StatefulWidget {
+class HomeBottomNav extends StatelessWidget {
   final int currentIndex;
   final ValueChanged<int>? onTap;
-  const HomeBottomNav({super.key, this.currentIndex = 0, this.onTap});
-
-  @override
-  State<HomeBottomNav> createState() => _HomeBottomNavState();
-}
-
-class _HomeBottomNavState extends State<HomeBottomNav> {
-  late int _selectedIndex;
-
-  @override
-  void initState() {
-    super.initState();
-    _selectedIndex = widget.currentIndex;
-  }
-
-  void _onItemTapped(int index) {
-    setState(() {
-      _selectedIndex = index;
-    });
-    if (widget.onTap != null) widget.onTap!(index);
-  }
+  const HomeBottomNav({super.key, required this.currentIndex, this.onTap});
 
   @override
   Widget build(BuildContext context) {
     return BottomNavigationBar(
-      currentIndex: _selectedIndex,
-      onTap: _onItemTapped,
-      selectedItemColor: Colors.black,
-      unselectedItemColor: Colors.grey,
-      backgroundColor: const Color(0xFFFFCC00),
+      currentIndex: currentIndex,
+      onTap: onTap,
+      backgroundColor: AppTheme.primaryYellow,
+      selectedItemColor: AppTheme.primaryBlack,
+      unselectedItemColor: Colors.black54,
       type: BottomNavigationBarType.fixed,
       items: const [
-        BottomNavigationBarItem(icon: Icon(Icons.home), label: "Trang chủ"),
-        BottomNavigationBarItem(icon: Icon(Icons.search), label: "Tìm kiếm"),
-        BottomNavigationBarItem(icon: Icon(Icons.history), label: "Lịch sử"),
-        BottomNavigationBarItem(icon: Icon(Icons.settings), label: "Cài đặt"),
+        BottomNavigationBarItem(
+          icon: Icon(Icons.home),
+          label: 'Trang chủ',
+        ),
+        BottomNavigationBarItem(
+          icon: Icon(Icons.search),
+          label: 'Tìm kiếm',
+        ),
+        BottomNavigationBarItem(
+          icon: Icon(Icons.history),
+          label: 'Lịch sử',
+        ),
+        BottomNavigationBarItem(
+          icon: Icon(Icons.pets),
+          label: 'Cài đặt',
+        ),
       ],
     );
   }

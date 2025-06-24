@@ -121,4 +121,64 @@ class MailService{
       throw Exception('Failed to create group');
     }
   }
+
+  // POST spam mail
+  static Future<void> spamMail(MarkMailRequest data) async {
+    final uri = Uri.parse('https://mailflow-backend-mj3r.onrender.com/api/mail/spam-mail');
+    final response = await http.post(uri,
+        headers: {
+          'Authorization': 'Bearer ${data.token}',
+          'Content-Type': 'application/json',
+        },
+        body: jsonEncode({'threadId': data.threadIds}));
+    if (response.statusCode != 200) {
+      throw Exception('Failed to mark spam');
+    }
+  }
+
+  // POST read mail
+  static Future<void> readMail(MarkMailRequest data) async {
+    final uri = Uri.parse('https://mailflow-backend-mj3r.onrender.com/api/mail/read-mail');
+    final response = await http.post(uri,
+        headers: {
+          'Authorization': 'Bearer ${data.token}',
+          'Content-Type': 'application/json',
+        },
+        body: jsonEncode({'threadId': data.threadIds}));
+    if (response.statusCode != 200) {
+      throw Exception('Failed to mark read');
+    }
+  }
+
+  // POST delete threads
+  static Future<void> deleteThreads(List<int> threadIds, String token) async {
+    final uri = Uri.parse('https://mailflow-backend-mj3r.onrender.com/api/mail/delete-threads');
+    final response = await http.post(uri,
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Content-Type': 'application/json',
+        },
+        body: jsonEncode(threadIds));
+    if (response.statusCode != 200) {
+      throw Exception('Failed to delete threads');
+    }
+  }
+
+  // POST upload file
+  static Future<String> uploadFile(String filePath, String token) async {
+    final uri = Uri.parse('https://mailflow-backend-mj3r.onrender.com/api/file/upload');
+    final request = http.MultipartRequest('POST', uri);
+    request.headers['Authorization'] = 'Bearer $token';
+    request.files.add(await http.MultipartFile.fromPath(
+      'file',
+      filePath,
+    ));
+    final streamedResponse = await request.send();
+    final response = await http.Response.fromStream(streamedResponse);
+    if (response.statusCode == 200) {
+      return response.body;
+    } else {
+      throw Exception('Failed to upload file');
+    }
+  }
 }
