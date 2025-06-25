@@ -8,4 +8,16 @@ class CreateGroupRequest{
     required this.subject,
     required this.token,
 });
+
+  CreateGroupRequest copyWith({
+    List<String>? receiverEmails,
+    String? subject,
+    String? token,
+  }) {
+    return CreateGroupRequest(
+      receiverEmails: receiverEmails ?? this.receiverEmails,
+      subject: subject ?? this.subject,
+      token: token ?? this.token,
+    );
+  }
 }

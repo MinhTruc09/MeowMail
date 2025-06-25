@@ -15,6 +15,22 @@ class SendMailRequest{
     this.file,
     required this.token,
   });
+
+  SendMailRequest copyWith({
+    String? receiverEmail,
+    String? subject,
+    String? content,
+    File? file,
+    String? token,
+  }) {
+    return SendMailRequest(
+      receiverEmail: receiverEmail ?? this.receiverEmail,
+      subject: subject ?? this.subject,
+      content: content ?? this.content,
+      file: file ?? this.file,
+      token: token ?? this.token,
+    );
+  }
 }
 class SendMailResponse{
   final String message;

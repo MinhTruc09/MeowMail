@@ -20,11 +20,13 @@ class AuthService {
     request.fields['phone'] = data.phone;
 
     if (data.avatar != null) {
-      request.files.add(await http.MultipartFile.fromPath(
-        'avatar',
-        data.avatar!.path,
-        contentType: MediaType('image', 'png'),
-      ));
+      request.files.add(
+        await http.MultipartFile.fromPath(
+          'avatar',
+          data.avatar!.path,
+          contentType: MediaType('image', 'png'),
+        ),
+      );
     }
 
     final response = await request.send();
@@ -72,6 +74,7 @@ class AuthService {
   static Future<void> logout() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove('token');
+    await prefs.remove('refreshToken');
   }
 
   static Future<void> _saveAccount(LoginResponse response) async {
@@ -88,6 +91,7 @@ class AuthService {
     accounts.insert(0, {
       'email': response.email,
       'token': response.accessToken,
+      'refreshToken': response.refreshToken,
     });
 
     if (accounts.length > 3) {
@@ -96,6 +100,52 @@ class AuthService {
 
     await prefs.setString('accounts', jsonEncode(accounts));
     await prefs.setString('token', response.accessToken);
+    await prefs.setString('refreshToken', response.refreshToken);
+  static Future<String?> refreshTokenIfNeeded() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final refreshToken = prefs.getString('refreshToken');
+      if (refreshToken == null) {
+        print('No refresh token available');
+        return null;
+      }
+
+      final url = Uri.parse('$baseUrl/api/auth/refresh-token');
+      final response = await http.post(
+        url,
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'refreshToken': refreshToken}),
+      );
+
+      if (response.statusCode == 200) {
+        final json = jsonDecode(response.body);
+        final newAccessToken = json['data']['accessToken'];
+        final newRefreshToken = json['data']['refreshToken'];
+        await prefs.setString('token', newAccessToken);
+        await prefs.setString('refreshToken', newRefreshToken);
+        return newAccessToken;
+      } else {
+        print('Token refresh failed: ${response.statusCode} - ${response.body}');
+        await prefs.remove('token');
+        await prefs.remove('refreshToken');
+        return null;
+      }
+    } catch (e) {
+      print('Exception during token refresh: $e');
+      return null;
+    }
+  }      } else {
+        print(
+          'Token refresh failed: ${response.statusCode} - ${response.body}',
+        );
+        await prefs.remove('token');
+        await prefs.remove('refreshToken');
+        return null;
+      }
+    } catch (e) {
+      print('Exception during token refresh: $e');
+      return null;
+    }
   }
 
   static Future<List<Map<String, dynamic>>> getRememberedAccounts() async {

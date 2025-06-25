@@ -166,7 +166,11 @@ class _RegisterFormSectionState extends State<RegisterFormSection> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Đăng ký thành công!')),
       );
-      Navigator.pushReplacementNamed(context, '/home');
+      Navigator.pushAndRemoveUntil(
+        context,
+        MaterialPageRoute(builder: (_) => const MainScreen()),
+        (route) => false,
+      );
     } catch (e, stack) {
       print('Đăng ký thất bại: $e');
       print(stack);

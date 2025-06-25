@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:mewmail/models/user/login_request.dart';
 import 'package:mewmail/services/auth_service.dart';
 import 'package:mewmail/screens/forgot_screen.dart';
+import 'package:mewmail/screens/main_screen.dart';
 
 class LoginFormSection extends StatefulWidget {
   const LoginFormSection({super.key});
@@ -39,7 +40,11 @@ class _LoginFormSectionState extends State<LoginFormSection> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Chào ${apiResponse.email}!')),
       );
-      Navigator.pushReplacementNamed(context, '/home');
+      Navigator.pushAndRemoveUntil(
+        context,
+        MaterialPageRoute(builder: (_) => const MainScreen()),
+        (route) => false,
+      );
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Đăng nhập thất bại: $e')),
