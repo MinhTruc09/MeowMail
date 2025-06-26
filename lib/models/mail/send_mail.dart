@@ -1,10 +1,9 @@
 import 'dart:io';
 
-class SendMailRequest{
+class SendMailRequest {
   final String receiverEmail;
   final String subject;
   final String content;
-
   final File? file;
   final String token;
 
@@ -32,14 +31,18 @@ class SendMailRequest{
     );
   }
 }
-class SendMailResponse{
+
+class SendMailResponse {
   final String message;
+
   SendMailResponse({
     required this.message,
   });
-  factory SendMailResponse.fromJson(Map<String,dynamic> json) {
+
+  factory SendMailResponse.fromJson(Map<String, dynamic> json) {
+    if (json['message'] == null) throw Exception('Missing message in response');
     return SendMailResponse(
-      message: json['message'] ?? 'Success',
+      message: json['message'] as String,
     );
   }
 }

@@ -31,26 +31,28 @@ class _LoginFormSectionState extends State<LoginFormSection> {
     }
 
     try {
-      // Đăng nhập backend API
-      final apiResponse = await AuthService.login(LoginRequest(
+      final userEmail = await AuthService.login(LoginRequest(
         email: email,
         password: password,
       ));
-
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Chào ${apiResponse.email}!')),
+        SnackBar(content: Text('Chào $userEmail!')),
       );
-      Navigator.pushAndRemoveUntil(
-        context,
-        MaterialPageRoute(builder: (_) => const MainScreen()),
-        (route) => false,
-      );
+      if (mounted) {
+        Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(builder: (_) => const MainScreen()),
+              (route) => false,
+        );
+      }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Đăng nhập thất bại: $e')),
+        SnackBar(content: Text('Đăng nhập thất bại: ${e.toString().replaceAll('Exception: ', '')}')),
       );
     } finally {
-      setState(() => _loading = false);
+      if (mounted) {
+        setState(() => _loading = false);
+      }
     }
   }
 
@@ -202,5 +204,12 @@ class _LoginFormSectionState extends State<LoginFormSection> {
         ),
       ],
     );
+  }
+
+  @override
+  void dispose() {
+    _emailController.dispose();
+    _passwordController.dispose();
+    super.dispose();
   }
 }

@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart'; // Add this import
 import 'package:http/http.dart' as http;
 import 'package:http_parser/http_parser.dart';
 import 'package:mewmail/models/user/profile_response.dart';
@@ -13,22 +14,25 @@ class UserService {
       final uri = Uri.parse('$baseUrl/api/user/my-profile');
       final response = await http.get(uri, headers: {
         'Authorization': 'Bearer $token',
-      });
+      }).timeout(const Duration(seconds: 10));
+      debugPrint('MyProfile response: ${response.statusCode} - ${response.body}');
       if (response.statusCode == 200) {
         final json = jsonDecode(response.body);
+        if (json['data'] == null) throw Exception('Missing data in profile response');
         return ApiResponse.fromJson(json, (data) => ProfileResponseDto.fromJson(data));
       } else if (response.statusCode == 403) {
-        final newToken = await AuthService.refreshTokenIfNeeded();
+        final newToken = await AuthService.refreshTokenIfNeeded(null);
         if (newToken != null) {
           return await myProfile(newToken);
         } else {
-          throw Exception('Phiên đăng nhập đã hết hạn, vui lòng đăng nhập lại.');
+          throw Exception('Session expired, please log in again.');
         }
       } else {
-        throw Exception('Failed to get profile');
+        throw Exception('Failed to get profile: ${response.body}');
       }
     } catch (e) {
-      throw Exception('Failed to get profile: $e');
+      debugPrint('Exception in myProfile: $e');
+      rethrow;
     }
   }
 
@@ -51,23 +55,30 @@ class UserService {
           contentType: MediaType('image', 'png'),
         ));
       }
-      final streamedResponse = await request.send();
+      final streamedResponse = await request.send().timeout(const Duration(seconds: 10));
       final response = await http.Response.fromStream(streamedResponse);
+      debugPrint('Update profile response: ${response.statusCode} - ${response.body}');
       if (response.statusCode == 200) {
         final json = jsonDecode(response.body);
         return ApiResponse.fromJson(json, (data) => data);
       } else if (response.statusCode == 403) {
-        final newToken = await AuthService.refreshTokenIfNeeded();
+        final newToken = await AuthService.refreshTokenIfNeeded(null);
         if (newToken != null) {
-          return await updateProfile(token: newToken, fullName: fullName, phone: phone, avatarPath: avatarPath);
+          return await updateProfile(
+            token: newToken,
+            fullName: fullName,
+            phone: phone,
+            avatarPath: avatarPath,
+          );
         } else {
-          throw Exception('Phiên đăng nhập đã hết hạn, vui lòng đăng nhập lại.');
+          throw Exception('Session expired, please log in again.');
         }
       } else {
-        throw Exception('Failed to update profile');
+        throw Exception('Failed to update profile: ${response.body}');
       }
     } catch (e) {
-      throw Exception('Failed to update profile: $e');
+      debugPrint('Exception in updateProfile: $e');
+      rethrow;
     }
   }
 
@@ -80,25 +91,31 @@ class UserService {
       final uri = Uri.parse('$baseUrl/api/user/change-pass');
       final request = http.MultipartRequest('PATCH', uri);
       request.headers['Authorization'] = 'Bearer $token';
-      request.fields['Mật khẩu cũ'] = oldPassword;
-      request.fields['Mật khẩu mới'] = newPassword;
-      final streamedResponse = await request.send();
+      request.fields['oldPassword'] = oldPassword;
+      request.fields['newPassword'] = newPassword;
+      final streamedResponse = await request.send().timeout(const Duration(seconds: 10));
       final response = await http.Response.fromStream(streamedResponse);
+      debugPrint('Change password response: ${response.statusCode} - ${response.body}');
       if (response.statusCode == 200) {
         final json = jsonDecode(response.body);
         return ApiResponse.fromJson(json, (data) => data);
       } else if (response.statusCode == 403) {
-        final newToken = await AuthService.refreshTokenIfNeeded();
+        final newToken = await AuthService.refreshTokenIfNeeded(null);
         if (newToken != null) {
-          return await changePass(token: newToken, oldPassword: oldPassword, newPassword: newPassword);
+          return await changePass(
+            token: newToken,
+            oldPassword: oldPassword,
+            newPassword: newPassword,
+          );
         } else {
-          throw Exception('Phiên đăng nhập đã hết hạn, vui lòng đăng nhập lại.');
+          throw Exception('Session expired, please log in again.');
         }
       } else {
-        throw Exception('Failed to change password');
+        throw Exception('Failed to change password: ${response.body}');
       }
     } catch (e) {
-      throw Exception('Failed to change password: $e');
+      debugPrint('Exception in changePass: $e');
+      rethrow;
     }
   }
-} 
+}

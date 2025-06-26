@@ -1,8 +1,9 @@
-class InboxThread{
+import 'dart:core';
+
+class InboxThread {
   final int threadId;
   final String title;
   final String subject;
-
   final String lastContent;
   final String lastSenderEmail;
   final String lastReceiverEmail;
@@ -22,19 +23,32 @@ class InboxThread{
     required this.lastCreatedAt,
     required this.read,
     required this.spam,
-});
-  factory InboxThread.fromJson(Map<String, dynamic> json){
+  });
+
+  factory InboxThread.fromJson(Map<String, dynamic> json) {
+    if (json['threadId'] == null) throw Exception('Missing threadId');
+    if (json['title'] == null) throw Exception('Missing title');
+    if (json['subject'] == null) throw Exception('Missing subject');
+    if (json['lastContent'] == null) throw Exception('Missing lastContent');
+    if (json['lastSenderEmail'] == null) throw Exception('Missing lastSenderEmail');
+    if (json['lastReceiverEmail'] == null) throw Exception('Missing lastReceiverEmail');
+    if (json['lastCreatedAt'] == null) throw Exception('Missing lastCreatedAt');
+    if (json['read'] == null) throw Exception('Missing read');
+    if (json['spam'] == null) throw Exception('Missing spam');
+
     return InboxThread(
-      threadId: json['threadId'],
-      title: json['title'],
-      subject: json['subject'],
-      lastContent: json['lastContent'],
-      lastSenderEmail: json['lastSenderEmail'],
-      lastReceiverEmail: json['lastReceiverEmail'],
-      groupMembers: List<String>.from(json['groupMembers']),
-      lastCreatedAt: DateTime.parse(json['lastCreatedAt']),
-      read: json['read'],
-      spam: json['spam'],
+      threadId: json['threadId'] as int,
+      title: json['title'] as String,
+      subject: json['subject'] as String,
+      lastContent: json['lastContent'] as String,
+      lastSenderEmail: json['lastSenderEmail'] as String,
+      lastReceiverEmail: json['lastReceiverEmail'] as String,
+      groupMembers: json['groupMembers'] != null
+          ? List<String>.from(json['groupMembers'])
+          : [],
+      lastCreatedAt: DateTime.parse(json['lastCreatedAt'] as String),
+      read: json['read'] as bool,
+      spam: json['spam'] as bool,
     );
   }
 }

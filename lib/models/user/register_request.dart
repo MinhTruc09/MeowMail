@@ -1,7 +1,7 @@
 import 'dart:core';
 import 'dart:io';
 
-class RegisterRequest{
+class RegisterRequest {
   final String email;
   final String password;
   final String fullName;
@@ -14,6 +14,5 @@ class RegisterRequest{
     required this.fullName,
     required this.phone,
     this.avatar,
-  }
-      );
+  });
 }

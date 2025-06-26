@@ -17,10 +17,12 @@ dependencies:
   firebase_storage: ^12.4.6
   google_sign_in: ^6.3.0
   http: ^1.4.0
+  http_parser: ^4.1.2
   shared_preferences: ^2.5.3
   flutter_secure_storage: ^9.2.4
   cupertino_icons: ^1.0.8
   image_picker: ^1.0.7
+  intl: ^0.18.1
 
 dev_dependencies:
   flutter_test:

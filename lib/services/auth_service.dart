@@ -1,73 +1,113 @@
 import 'dart:convert';
-import 'package:shared_preferences/shared_preferences.dart';
-import 'package:http_parser/http_parser.dart';
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:mewmail/models/user/login_request.dart';
-import 'package:mewmail/models/user/login_response.dart';
 import 'package:mewmail/models/user/register_request.dart';
-import 'package:mewmail/models/user/register_response.dart';
+import 'package:http_parser/http_parser.dart';
 
 class AuthService {
   static const String baseUrl = 'https://mailflow-backend-mj3r.onrender.com';
 
-  static Future<RegisterResponse> register(RegisterRequest data) async {
-    final uri = Uri.parse('$baseUrl/api/auth/register');
-    final request = http.MultipartRequest('POST', uri);
-
-    request.fields['email'] = data.email;
-    request.fields['password'] = data.password;
-    request.fields['fullName'] = data.fullName;
-    request.fields['phone'] = data.phone;
-
-    if (data.avatar != null) {
-      request.files.add(
-        await http.MultipartFile.fromPath(
-          'avatar',
-          data.avatar!.path,
-          contentType: MediaType('image', 'png'),
-        ),
-      );
-    }
-
-    final response = await request.send();
-    final body = await http.Response.fromStream(response);
-
-    if (body.body.isEmpty) {
-      print('Đăng ký lỗi: status=${response.statusCode}, body is empty');
-      throw Exception('Failed to register: Server trả về rỗng');
-    }
-
-    dynamic json;
+  static Future<String> login(LoginRequest request) async {
     try {
-      json = jsonDecode(body.body);
-    } catch (e) {
-      print('Đăng ký lỗi: status=${response.statusCode}, body=${body.body}');
-      throw Exception('Failed to register: Không phải JSON: ${body.body}');
-    }
+      debugPrint('📡 Gửi yêu cầu đăng nhập: \\${request.email}');
+      final response = await http.post(
+        Uri.parse('$baseUrl/api/auth/login'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode(request.toJson()),
+      ).timeout(const Duration(seconds: 10));
+      debugPrint('📬 Phản hồi đăng nhập: \\${response.statusCode} - \\${response.body}');
 
-    if (response.statusCode == 200) {
-      return RegisterResponse.fromJson(json);
-    } else {
-      print('Đăng ký lỗi: status=${response.statusCode}, body=${body.body}');
-      throw Exception('Failed to register: ${json['message'] ?? body.body}');
+      if (response.statusCode == 200) {
+        final json = jsonDecode(response.body);
+        final token = json['data']['accessToken'];
+        final refreshToken = json['data']['refreshToken'];
+        final email = json['data']['email'];
+        if (token == null || refreshToken == null || email == null) {
+          throw Exception('Thiếu token, refreshToken hoặc email trong phản hồi');
+        }
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString('token', token);
+        await prefs.setString('refreshToken', refreshToken);
+        await prefs.setString('email', email);
+        debugPrint('✅ Lưu token, refreshToken và email thành công');
+        return email;
+      } else {
+        throw Exception('Đăng nhập thất bại: \\${response.body}');
+      }
+    } catch (e) {
+      debugPrint('❌ Lỗi đăng nhập: $e');
+      rethrow;
     }
   }
 
-  static Future<LoginResponse> login(LoginRequest data) async {
-    final url = Uri.parse('$baseUrl/api/auth/login');
-    final response = await http.post(
-      url,
-      headers: {'Content-Type': 'application/json'},
-      body: jsonEncode(data.toJson()),
-    );
+  static Future<String?> refreshTokenIfNeeded(String? oldToken) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final refreshToken = prefs.getString('refreshToken');
+      final email = prefs.getString('email');
+      if (refreshToken == null || email == null) {
+        debugPrint('❌ Không tìm thấy refreshToken hoặc email');
+        return null;
+      }
+      debugPrint('🔄 Gửi yêu cầu refresh token');
+      final response = await http.post(
+        Uri.parse('$baseUrl/api/auth/refresh-token'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'email': email, 'password': refreshToken}),
+      ).timeout(const Duration(seconds: 10));
+      debugPrint('📬 Phản hồi refresh token: \\${response.statusCode} - \\${response.body}');
+      if (response.statusCode == 200) {
+        final json = jsonDecode(response.body);
+        final newToken = json['data']['accessToken'];
+        final newRefreshToken = json['data']['refreshToken'];
+        if (newToken == null) {
+          throw Exception('Token mới không có trong phản hồi');
+        }
+        await prefs.setString('token', newToken);
+        if (newRefreshToken != null) {
+          await prefs.setString('refreshToken', newRefreshToken);
+        }
+        debugPrint('✅ Refresh token thành công');
+        return newToken;
+      } else {
+        throw Exception('Refresh token thất bại: \\${response.body}');
+      }
+    } catch (e) {
+      debugPrint('❌ Lỗi refresh token: $e');
+      return null;
+    }
+  }
 
-    if (response.statusCode == 200) {
-      final json = jsonDecode(response.body);
-      final loginResponse = LoginResponse.fromJson(json['data']);
-      await _saveAccount(loginResponse);
-      return loginResponse;
-    } else {
-      throw Exception('Failed to login');
+  static Future<void> register(RegisterRequest request) async {
+    try {
+      debugPrint('📡 Gửi yêu cầu đăng ký: ${request.email}');
+      final requestBody = http.MultipartRequest('POST', Uri.parse('$baseUrl/api/auth/register'));
+      requestBody.fields['email'] = request.email;
+      requestBody.fields['password'] = request.password;
+      requestBody.fields['fullName'] = request.fullName;
+      requestBody.fields['phone'] = request.phone;
+      if (request.avatar != null) {
+        requestBody.files.add(await http.MultipartFile.fromPath(
+          'avatar',
+          request.avatar!.path,
+          contentType: MediaType('image', 'png'),
+        ));
+      }
+      final response = await requestBody.send().timeout(const Duration(seconds: 10));
+      final responseBody = await http.Response.fromStream(response);
+      debugPrint('📬 Phản hồi đăng ký: ${response.statusCode} - ${responseBody.body}');
+
+      if (response.statusCode == 200) {
+        // Đăng ký thành công, không cần lấy token ở đây
+        return;
+      } else {
+        throw Exception('Đăng ký thất bại: ${responseBody.body}');
+      }
+    } catch (e) {
+      debugPrint('❌ Lỗi đăng ký: $e');
+      rethrow;
     }
   }
 
@@ -75,83 +115,7 @@ class AuthService {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove('token');
     await prefs.remove('refreshToken');
-  }
-
-  static Future<void> _saveAccount(LoginResponse response) async {
-    final prefs = await SharedPreferences.getInstance();
-    final raw = prefs.getString('accounts');
-    List<Map<String, dynamic>> accounts = [];
-
-    if (raw != null) {
-      accounts = List<Map<String, dynamic>>.from(jsonDecode(raw));
-    }
-
-    accounts.removeWhere((acc) => acc['email'] == response.email);
-
-    accounts.insert(0, {
-      'email': response.email,
-      'token': response.accessToken,
-      'refreshToken': response.refreshToken,
-    });
-
-    if (accounts.length > 3) {
-      accounts = accounts.sublist(0, 3);
-    }
-
-    await prefs.setString('accounts', jsonEncode(accounts));
-    await prefs.setString('token', response.accessToken);
-    await prefs.setString('refreshToken', response.refreshToken);
-  static Future<String?> refreshTokenIfNeeded() async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      final refreshToken = prefs.getString('refreshToken');
-      if (refreshToken == null) {
-        print('No refresh token available');
-        return null;
-      }
-
-      final url = Uri.parse('$baseUrl/api/auth/refresh-token');
-      final response = await http.post(
-        url,
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({'refreshToken': refreshToken}),
-      );
-
-      if (response.statusCode == 200) {
-        final json = jsonDecode(response.body);
-        final newAccessToken = json['data']['accessToken'];
-        final newRefreshToken = json['data']['refreshToken'];
-        await prefs.setString('token', newAccessToken);
-        await prefs.setString('refreshToken', newRefreshToken);
-        return newAccessToken;
-      } else {
-        print('Token refresh failed: ${response.statusCode} - ${response.body}');
-        await prefs.remove('token');
-        await prefs.remove('refreshToken');
-        return null;
-      }
-    } catch (e) {
-      print('Exception during token refresh: $e');
-      return null;
-    }
-  }      } else {
-        print(
-          'Token refresh failed: ${response.statusCode} - ${response.body}',
-        );
-        await prefs.remove('token');
-        await prefs.remove('refreshToken');
-        return null;
-      }
-    } catch (e) {
-      print('Exception during token refresh: $e');
-      return null;
-    }
-  }
-
-  static Future<List<Map<String, dynamic>>> getRememberedAccounts() async {
-    final prefs = await SharedPreferences.getInstance();
-    final raw = prefs.getString('accounts');
-    if (raw == null) return [];
-    return List<Map<String, dynamic>>.from(jsonDecode(raw));
+    await prefs.remove('email');
+    debugPrint('✅ Đăng xuất và xóa token, refreshToken, email thành công');
   }
 }

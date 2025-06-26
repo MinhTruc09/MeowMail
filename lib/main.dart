@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:mewmail/screens/splash_screen.dart';
 import 'package:mewmail/widgets/theme.dart';
+import 'package:mewmail/routes/app_routes.dart';
 
 void main() {
   runApp(const MyApp());
@@ -15,7 +15,9 @@ class MyApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       title: 'MewMail',
       theme: AppTheme.theme,
-      home: const SplashScreen(),
+      initialRoute: '/splash',
+      routes: appRoutes,
+      onGenerateRoute: onGenerateRoute,
     );
   }
 }

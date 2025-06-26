@@ -33,9 +33,7 @@ class MailItem {
       receiverEmail: json['receiverEmail'],
       receiverName: json['receiverName'],
       createdAt: DateTime.parse(json['createdAt']),
-      attachments: (json['attachments'] as List)
-          .map((e) => Attachment.fromJson(e))
-          .toList(),
+      attachments: (json['attachments'] as List?)?.map((e) => Attachment.fromJson(e)).toList() ?? [],
       isRead: json['isRead'],
       isSpam: json['isSpam'],
     );

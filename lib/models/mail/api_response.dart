@@ -11,10 +11,13 @@ class ApiResponse<T> {
 
   factory ApiResponse.fromJson(
       Map<String, dynamic> json, T Function(dynamic) fromJsonT) {
+    if (json['status'] == null) throw Exception('Missing status');
+    if (json['message'] == null) throw Exception('Missing message');
+
     return ApiResponse<T>(
-      status: json['status'] ?? 0,
-      message: json['message'] ?? '',
+      status: json['status'] as int,
+      message: json['message'] as String,
       data: json['data'] != null ? fromJsonT(json['data']) : null,
     );
   }
-} 
+}

@@ -1,5 +1,6 @@
 import 'user.dart';
-class LoginResponse{
+
+class LoginResponse {
   final String accessToken;
   final String refreshToken;
   final String email;
@@ -10,11 +11,15 @@ class LoginResponse{
     required this.email,
   });
 
-  factory LoginResponse.fromJson(Map<String, dynamic> json){
+  factory LoginResponse.fromJson(Map<String, dynamic> json) {
+    if (json['accessToken'] == null) throw Exception('Missing accessToken');
+    if (json['refreshToken'] == null) throw Exception('Missing refreshToken');
+    if (json['email'] == null) throw Exception('Missing email');
+
     return LoginResponse(
-      accessToken: json['accessToken'] ?? '',
-      refreshToken: json['refreshToken'] ?? '',
-      email: json['email'] ?? '',
+      accessToken: json['accessToken'] as String,
+      refreshToken: json['refreshToken'] as String,
+      email: json['email'] as String,
     );
   }
 }
