@@ -23,7 +23,9 @@ class MailItem {
     required this.attachments,
     required this.isRead,
     required this.isSpam,
-});factory MailItem.fromJson(Map<String, dynamic> json) {
+  });
+
+  factory MailItem.fromJson(Map<String, dynamic> json) {
     return MailItem(
       mailId: json['mailId'],
       subject: json['subject'],
@@ -33,7 +35,11 @@ class MailItem {
       receiverEmail: json['receiverEmail'],
       receiverName: json['receiverName'],
       createdAt: DateTime.parse(json['createdAt']),
-      attachments: (json['attachments'] as List?)?.map((e) => Attachment.fromJson(e)).toList() ?? [],
+      attachments:
+          (json['attachments'] as List?)
+              ?.map((e) => Attachment.fromJson(e))
+              .toList() ??
+          [],
       isRead: json['isRead'],
       isSpam: json['isSpam'],
     );

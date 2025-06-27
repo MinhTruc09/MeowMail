@@ -3,6 +3,9 @@ import 'package:mewmail/models/user/login_request.dart';
 import 'package:mewmail/services/auth_service.dart';
 import 'package:mewmail/screens/forgot_screen.dart';
 import 'package:mewmail/screens/main_screen.dart';
+import 'package:mewmail/widgets/common/custom_text_field.dart';
+import 'package:mewmail/widgets/common/custom_button.dart';
+import 'package:mewmail/widgets/theme.dart';
 
 class LoginFormSection extends StatefulWidget {
   const LoginFormSection({super.key});
@@ -14,7 +17,6 @@ class LoginFormSection extends StatefulWidget {
 class _LoginFormSectionState extends State<LoginFormSection> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
-  bool _obscure = true;
   bool _loading = false;
 
   Future<void> _submitLogin() async {
@@ -24,30 +26,35 @@ class _LoginFormSectionState extends State<LoginFormSection> {
 
     if (email.isEmpty || password.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Vui lòng nhập đầy đủ email và mật khẩu!')),
+        const SnackBar(
+          content: Text('Vui lòng nhập đầy đủ email và mật khẩu!'),
+        ),
       );
       setState(() => _loading = false);
       return;
     }
 
     try {
-      final userEmail = await AuthService.login(LoginRequest(
-        email: email,
-        password: password,
-      ));
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Chào $userEmail!')),
+      final userEmail = await AuthService.login(
+        LoginRequest(email: email, password: password),
       );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Chào $userEmail!')));
       if (mounted) {
         Navigator.pushAndRemoveUntil(
           context,
           MaterialPageRoute(builder: (_) => const MainScreen()),
-              (route) => false,
+          (route) => false,
         );
       }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Đăng nhập thất bại: ${e.toString().replaceAll('Exception: ', '')}')),
+        SnackBar(
+          content: Text(
+            'Đăng nhập thất bại: ${e.toString().replaceAll('Exception: ', '')}',
+          ),
+        ),
       );
     } finally {
       if (mounted) {
@@ -76,63 +83,18 @@ class _LoginFormSectionState extends State<LoginFormSection> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text("Email:", style: theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.bold, color: Colors.black, fontFamily: 'Borel')),
-              const SizedBox(height: 8),
-              TextField(
+              CustomTextField(
+                label: "Email",
+                hintText: "abc@gmail.com",
                 controller: _emailController,
-                style: const TextStyle(color: Colors.black, fontFamily: 'Borel'),
-                cursorColor: Colors.black,
-                decoration: InputDecoration(
-                  hintText: "abc@gmail.com",
-                  hintStyle: const TextStyle(color: Colors.black54, fontStyle: FontStyle.italic, fontFamily: 'Borel'),
-                  filled: true,
-                  fillColor: Colors.transparent,
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(color: Colors.black12, width: 1),
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(color: Colors.black12, width: 1),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(color: Colors.black, width: 1),
-                  ),
-                ),
+                keyboardType: TextInputType.emailAddress,
+                prefixIcon: Icons.email,
               ),
-              const SizedBox(height: 12),
-              Text("Mật khẩu:", style: theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.bold, color: Colors.black, fontFamily: 'Borel')),
-              const SizedBox(height: 8),
-              TextField(
+              const SizedBox(height: 16),
+              PasswordTextField(
+                label: "Mật khẩu",
+                hintText: "************",
                 controller: _passwordController,
-                obscureText: _obscure,
-                style: const TextStyle(color: Colors.black, fontFamily: 'Borel'),
-                cursorColor: Colors.black,
-                decoration: InputDecoration(
-                  hintText: "************",
-                  hintStyle: const TextStyle(color: Colors.black54, fontStyle: FontStyle.italic, fontFamily: 'Borel'),
-                  filled: true,
-                  fillColor: Colors.transparent,
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(color: Colors.black12, width: 1),
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(color: Colors.black12, width: 1),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(color: Colors.black, width: 1),
-                  ),
-                  suffixIcon: IconButton(
-                    icon: Icon(_obscure ? Icons.visibility_off : Icons.visibility, color: Colors.black54),
-                    onPressed: () => setState(() => _obscure = !_obscure),
-                  ),
-                ),
               ),
               const SizedBox(height: 6),
               Align(
@@ -161,23 +123,12 @@ class _LoginFormSectionState extends State<LoginFormSection> {
                   ),
                 ),
               ),
-              const SizedBox(height: 10),
-              SizedBox(
-                width: double.infinity,
-                height: 44,
-                child: ElevatedButton(
-                  onPressed: _loading ? null : _submitLogin,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.black,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    elevation: 0,
-                  ),
-                  child: _loading
-                      ? const CircularProgressIndicator(color: Colors.white)
-                      : const Text("ĐĂNG NHẬP", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, fontFamily: 'Borel')),
-                ),
+              const SizedBox(height: 16),
+              CustomButton(
+                text: "ĐĂNG NHẬP",
+                onPressed: _loading ? null : _submitLogin,
+                isLoading: _loading,
+                type: ButtonType.primary,
               ),
             ],
           ),
@@ -186,7 +137,13 @@ class _LoginFormSectionState extends State<LoginFormSection> {
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Text("Chưa có tài khoản? ", style: theme.textTheme.bodyMedium?.copyWith(fontSize: screenWidth * 0.045, fontFamily: 'Borel')),
+            Text(
+              "Chưa có tài khoản? ",
+              style: theme.textTheme.bodyMedium?.copyWith(
+                fontSize: screenWidth * 0.045,
+                fontFamily: 'Borel',
+              ),
+            ),
             GestureDetector(
               onTap: () => Navigator.pushNamed(context, '/register'),
               child: Text(

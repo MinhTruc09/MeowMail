@@ -11,13 +11,17 @@ class AuthService {
 
   static Future<String> login(LoginRequest request) async {
     try {
-      debugPrint('📡 Gửi yêu cầu đăng nhập: \\${request.email}');
-      final response = await http.post(
-        Uri.parse('$baseUrl/api/auth/login'),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode(request.toJson()),
-      ).timeout(const Duration(seconds: 10));
-      debugPrint('📬 Phản hồi đăng nhập: \\${response.statusCode} - \\${response.body}');
+      debugPrint('📡 Gửi yêu cầu đăng nhập: ${request.email}');
+      final response = await http
+          .post(
+            Uri.parse('$baseUrl/api/auth/login'),
+            headers: {'Content-Type': 'application/json'},
+            body: jsonEncode(request.toJson()),
+          )
+          .timeout(const Duration(seconds: 10));
+      debugPrint(
+        '📬 Phản hồi đăng nhập: ${response.statusCode} - ${response.body}',
+      );
 
       if (response.statusCode == 200) {
         final json = jsonDecode(response.body);
@@ -25,7 +29,9 @@ class AuthService {
         final refreshToken = json['data']['refreshToken'];
         final email = json['data']['email'];
         if (token == null || refreshToken == null || email == null) {
-          throw Exception('Thiếu token, refreshToken hoặc email trong phản hồi');
+          throw Exception(
+            'Thiếu token, refreshToken hoặc email trong phản hồi',
+          );
         }
         final prefs = await SharedPreferences.getInstance();
         await prefs.setString('token', token);
@@ -34,7 +40,7 @@ class AuthService {
         debugPrint('✅ Lưu token, refreshToken và email thành công');
         return email;
       } else {
-        throw Exception('Đăng nhập thất bại: \\${response.body}');
+        throw Exception('Đăng nhập thất bại: ${response.body}');
       }
     } catch (e) {
       debugPrint('❌ Lỗi đăng nhập: $e');
@@ -52,12 +58,16 @@ class AuthService {
         return null;
       }
       debugPrint('🔄 Gửi yêu cầu refresh token');
-      final response = await http.post(
-        Uri.parse('$baseUrl/api/auth/refresh-token'),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({'email': email, 'password': refreshToken}),
-      ).timeout(const Duration(seconds: 10));
-      debugPrint('📬 Phản hồi refresh token: \\${response.statusCode} - \\${response.body}');
+      final response = await http
+          .post(
+            Uri.parse('$baseUrl/api/auth/Refresh-token'),
+            headers: {'Content-Type': 'application/json'},
+            body: jsonEncode({'email': email, 'password': refreshToken}),
+          )
+          .timeout(const Duration(seconds: 10));
+      debugPrint(
+        '📬 Phản hồi refresh token: ${response.statusCode} - ${response.body}',
+      );
       if (response.statusCode == 200) {
         final json = jsonDecode(response.body);
         final newToken = json['data']['accessToken'];
@@ -72,7 +82,7 @@ class AuthService {
         debugPrint('✅ Refresh token thành công');
         return newToken;
       } else {
-        throw Exception('Refresh token thất bại: \\${response.body}');
+        throw Exception('Refresh token thất bại: ${response.body}');
       }
     } catch (e) {
       debugPrint('❌ Lỗi refresh token: $e');
@@ -83,21 +93,30 @@ class AuthService {
   static Future<void> register(RegisterRequest request) async {
     try {
       debugPrint('📡 Gửi yêu cầu đăng ký: ${request.email}');
-      final requestBody = http.MultipartRequest('POST', Uri.parse('$baseUrl/api/auth/register'));
+      final requestBody = http.MultipartRequest(
+        'POST',
+        Uri.parse('$baseUrl/api/auth/register'),
+      );
       requestBody.fields['email'] = request.email;
       requestBody.fields['password'] = request.password;
       requestBody.fields['fullName'] = request.fullName;
       requestBody.fields['phone'] = request.phone;
       if (request.avatar != null) {
-        requestBody.files.add(await http.MultipartFile.fromPath(
-          'avatar',
-          request.avatar!.path,
-          contentType: MediaType('image', 'png'),
-        ));
+        requestBody.files.add(
+          await http.MultipartFile.fromPath(
+            'avatar',
+            request.avatar!.path,
+            contentType: MediaType('image', 'png'),
+          ),
+        );
       }
-      final response = await requestBody.send().timeout(const Duration(seconds: 10));
+      final response = await requestBody.send().timeout(
+        const Duration(seconds: 10),
+      );
       final responseBody = await http.Response.fromStream(response);
-      debugPrint('📬 Phản hồi đăng ký: ${response.statusCode} - ${responseBody.body}');
+      debugPrint(
+        '📬 Phản hồi đăng ký: ${response.statusCode} - ${responseBody.body}',
+      );
 
       if (response.statusCode == 200) {
         // Đăng ký thành công, không cần lấy token ở đây

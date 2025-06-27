@@ -1,5 +1,13 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:mewmail/widgets/theme.dart';
+import 'package:mewmail/widgets/common/custom_widgets.dart';
+import 'package:mewmail/widgets/common/custom_text_field.dart';
+import 'package:mewmail/widgets/common/custom_button.dart';
+import 'package:mewmail/services/user_service.dart';
+import 'package:mewmail/models/user/profile_response.dart';
 
 class EditProfileScreen extends StatefulWidget {
   const EditProfileScreen({super.key});
@@ -10,102 +18,314 @@ class EditProfileScreen extends StatefulWidget {
 
 class _EditProfileScreenState extends State<EditProfileScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _nameController = TextEditingController();
-  final _nicknameController = TextEditingController();
-  final _emailController = TextEditingController();
+  final _fullNameController = TextEditingController();
   final _phoneController = TextEditingController();
-  String _gender = 'Nam';
+  final _emailController = TextEditingController();
+
+  ProfileResponseDto? _profile;
+  File? _selectedImage;
+  bool _isLoading = true;
+  bool _isSaving = false;
 
   @override
   void initState() {
     super.initState();
-    _loadUser();
+    _loadProfile();
   }
 
-  Future<void> _loadUser() async {
-    final prefs = await SharedPreferences.getInstance();
-    final accountsRaw = prefs.getString('accounts');
-    if (accountsRaw != null) {
-      // Giả lập lấy dữ liệu user từ local
-      final accounts = List<Map<String, dynamic>>.from(
-        (accountsRaw.isNotEmpty) ? List<Map<String, dynamic>>.from(List<dynamic>.from(accountsRaw.codeUnits.map((e) => String.fromCharCode(e)).join() == '' ? [] : List<dynamic>.from(List<dynamic>.from(List<dynamic>.from(accountsRaw.codeUnits.map((e) => String.fromCharCode(e)).join() == '' ? [] : List<dynamic>.from([])))))) : []);
-      if (accounts.isNotEmpty) {
+  @override
+  void dispose() {
+    _fullNameController.dispose();
+    _phoneController.dispose();
+    _emailController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _loadProfile() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('token');
+      if (token == null) {
+        if (mounted) {
+          Navigator.pushNamedAndRemoveUntil(
+            context,
+            '/login',
+            (route) => false,
+          );
+        }
+        return;
+      }
+
+      final response = await UserService.myProfile(token);
+      setState(() {
+        _profile = response.data;
+        _fullNameController.text = _profile?.fullname ?? '';
+        _phoneController.text = _profile?.phone ?? '';
+        _emailController.text = _profile?.email ?? '';
+        _isLoading = false;
+      });
+    } catch (e) {
+      setState(() => _isLoading = false);
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Lỗi tải thông tin: $e')));
+      }
+    }
+  }
+
+  Future<void> _pickImage() async {
+    try {
+      final ImagePicker picker = ImagePicker();
+      final XFile? image = await picker.pickImage(
+        source: ImageSource.gallery,
+        maxWidth: 800,
+        maxHeight: 800,
+        imageQuality: 85,
+      );
+
+      if (image != null) {
         setState(() {
-          _nameController.text = accounts[0]['username'] ?? '';
-          _nicknameController.text = accounts[0]['nickname'] ?? '';
-          _emailController.text = accounts[0]['email'] ?? '';
-          _phoneController.text = accounts[0]['phone'] ?? '';
-          _gender = accounts[0]['gender'] ?? 'Nam';
+          _selectedImage = File(image.path);
         });
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Lỗi chọn ảnh: $e')));
       }
     }
   }
 
   Future<void> _saveProfile() async {
     if (!_formKey.currentState!.validate()) return;
-    final prefs = await SharedPreferences.getInstance();
-    final accountsRaw = prefs.getString('accounts');
-    if (accountsRaw != null) {
-      final accounts = List<Map<String, dynamic>>.from(
-        (accountsRaw.isNotEmpty) ? List<Map<String, dynamic>>.from(List<dynamic>.from(accountsRaw.codeUnits.map((e) => String.fromCharCode(e)).join() == '' ? [] : List<dynamic>.from(List<dynamic>.from(List<dynamic>.from(accountsRaw.codeUnits.map((e) => String.fromCharCode(e)).join() == '' ? [] : List<dynamic>.from([])))))) : []);
-      if (accounts.isNotEmpty) {
-        accounts[0]['username'] = _nameController.text;
-        accounts[0]['nickname'] = _nicknameController.text;
-        accounts[0]['email'] = _emailController.text;
-        accounts[0]['phone'] = _phoneController.text;
-        accounts[0]['gender'] = _gender;
-        await prefs.setString('accounts', accounts.toString());
+
+    setState(() => _isSaving = true);
+
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('token');
+      if (token == null) {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Lưu thông tin thành công!')));
-          Navigator.pop(context);
+          Navigator.pushNamedAndRemoveUntil(
+            context,
+            '/login',
+            (route) => false,
+          );
         }
+        return;
+      }
+
+      await UserService.updateProfile(
+        token: token,
+        fullName: _fullNameController.text.trim(),
+        phone: _phoneController.text.trim(),
+        avatarPath: _selectedImage?.path,
+      );
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Cập nhật thông tin thành công!'),
+            backgroundColor: Colors.green,
+          ),
+        );
+        Navigator.pop(context, true); // Return true to indicate success
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Lỗi cập nhật: $e')));
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isSaving = false);
       }
     }
   }
 
+  String? _validateFullName(String? value) {
+    if (value == null || value.trim().isEmpty) {
+      return 'Vui lòng nhập họ tên';
+    }
+    if (value.trim().length < 2) {
+      return 'Họ tên phải có ít nhất 2 ký tự';
+    }
+    return null;
+  }
+
+  String? _validatePhone(String? value) {
+    if (value == null || value.trim().isEmpty) {
+      return 'Vui lòng nhập số điện thoại';
+    }
+    final phoneRegex = RegExp(r'^[0-9]{10,11}$');
+    if (!phoneRegex.hasMatch(value.trim())) {
+      return 'Số điện thoại không hợp lệ';
+    }
+    return null;
+  }
+
+  Widget _buildAvatarSection() {
+    return Center(
+      child: Stack(
+        children: [
+          CircleAvatar(
+            radius: AppTheme.responsiveWidth(context, 0.15),
+            backgroundColor: AppTheme.primaryYellow.withValues(alpha: 0.3),
+            backgroundImage:
+                _selectedImage != null
+                    ? FileImage(_selectedImage!)
+                    : (_profile?.avatar != null && _profile!.avatar.isNotEmpty)
+                    ? NetworkImage(_profile!.avatar)
+                    : null,
+            child:
+                (_selectedImage == null &&
+                        (_profile?.avatar == null || _profile!.avatar.isEmpty))
+                    ? Icon(
+                      Icons.person,
+                      size: AppTheme.responsiveWidth(context, 0.15),
+                      color: AppTheme.primaryBlack,
+                    )
+                    : null,
+          ),
+          Positioned(
+            bottom: 0,
+            right: 0,
+            child: GestureDetector(
+              onTap: _pickImage,
+              child: Container(
+                width: AppTheme.responsiveWidth(context, 0.08),
+                height: AppTheme.responsiveWidth(context, 0.08),
+                decoration: BoxDecoration(
+                  color: AppTheme.primaryBlack,
+                  shape: BoxShape.circle,
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.2),
+                      blurRadius: 4,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: Icon(
+                  Icons.camera_alt,
+                  color: AppTheme.primaryWhite,
+                  size: AppTheme.responsiveWidth(context, 0.04),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    final screenWidth = MediaQuery.of(context).size.width;
+    if (_isLoading) {
+      return Scaffold(
+        backgroundColor: AppTheme.primaryWhite,
+        appBar: AppBar(
+          title: const Text(
+            'Chỉnh sửa thông tin',
+            style: TextStyle(
+              color: AppTheme.primaryWhite,
+              fontFamily: 'Borel',
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          backgroundColor: AppTheme.primaryBlack,
+          foregroundColor: AppTheme.primaryWhite,
+          elevation: 0,
+          centerTitle: false,
+        ),
+        body: const LoadingWidget(message: 'Đang tải thông tin...'),
+      );
+    }
+
     return Scaffold(
-      backgroundColor: Colors.white,
-      body: SafeArea(
+      backgroundColor: AppTheme.primaryWhite,
+      appBar: AppBar(
+        title: const Text(
+          'Chỉnh sửa thông tin',
+          style: TextStyle(
+            color: AppTheme.primaryWhite,
+            fontFamily: 'Borel',
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        backgroundColor: AppTheme.primaryBlack,
+        foregroundColor: AppTheme.primaryWhite,
+        elevation: 0,
+        centerTitle: false,
+      ),
+      body: Form(
+        key: _formKey,
         child: SingleChildScrollView(
+          padding: EdgeInsets.all(
+            AppTheme.responsivePadding(context, AppTheme.defaultPadding),
+          ),
           child: Column(
             children: [
-              _EditProfileHeader(),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-                child: Form(
-                  key: _formKey,
-                  child: Column(
-                    children: [
-                      _EditProfileTextField(label: 'Họ và tên', controller: _nameController),
-                      const SizedBox(height: 12),
-                      _EditProfileTextField(label: 'Nick name', controller: _nicknameController),
-                      const SizedBox(height: 12),
-                      _EditProfileTextField(label: 'email', controller: _emailController, keyboardType: TextInputType.emailAddress),
-                      const SizedBox(height: 12),
-                      _EditProfileTextField(label: 'Số điện thoại', controller: _phoneController, keyboardType: TextInputType.phone, suffix: const Icon(Icons.flag)),
-                      const SizedBox(height: 12),
-                      _GenderDropdown(value: _gender, onChanged: (v) => setState(() => _gender = v ?? _gender)),
-                      const SizedBox(height: 24),
-                      SizedBox(
-                        width: double.infinity,
-                        height: 48,
-                        child: ElevatedButton(
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.black,
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                          ),
-                          onPressed: _saveProfile,
-                          child: const Text('Lưu thông tin', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, fontFamily: 'Borel', color: Colors.white)),
-                        ),
-                      ),
-                      const SizedBox(height: 32),
-                      Image.asset('assets/images/paw.png', width: screenWidth * 0.3),
-                    ],
-                  ),
+              SizedBox(
+                height: AppTheme.responsivePadding(
+                  context,
+                  AppTheme.largePadding,
                 ),
+              ),
+              _buildAvatarSection(),
+              SizedBox(
+                height: AppTheme.responsivePadding(
+                  context,
+                  AppTheme.largePadding,
+                ),
+              ),
+              CustomTextField(
+                label: 'Họ và tên',
+                controller: _fullNameController,
+                prefixIcon: Icons.person,
+                validator: _validateFullName,
+                keyboardType: TextInputType.name,
+              ),
+              SizedBox(
+                height: AppTheme.responsivePadding(
+                  context,
+                  AppTheme.defaultPadding,
+                ),
+              ),
+              CustomTextField(
+                label: 'Số điện thoại',
+                controller: _phoneController,
+                prefixIcon: Icons.phone,
+                validator: _validatePhone,
+                keyboardType: TextInputType.phone,
+              ),
+              SizedBox(
+                height: AppTheme.responsivePadding(
+                  context,
+                  AppTheme.defaultPadding,
+                ),
+              ),
+              CustomTextField(
+                label: 'Email',
+                controller: _emailController,
+                prefixIcon: Icons.email,
+                enabled: false,
+                readOnly: true,
+              ),
+              SizedBox(
+                height: AppTheme.responsivePadding(
+                  context,
+                  AppTheme.largePadding,
+                ),
+              ),
+              CustomButton(
+                text: 'Lưu thay đổi',
+                onPressed: _isSaving ? null : _saveProfile,
+                isLoading: _isSaving,
+                type: ButtonType.primary,
               ),
             ],
           ),
@@ -114,88 +334,3 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     );
   }
 }
-
-class _EditProfileHeader extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Stack(
-      children: [
-        Container(
-          height: 90,
-          decoration: const BoxDecoration(
-            color: Color(0xFFFFCC00),
-            borderRadius: BorderRadius.only(
-              bottomLeft: Radius.circular(40),
-              bottomRight: Radius.circular(40),
-            ),
-          ),
-        ),
-        Positioned(
-          left: 0,
-          top: 36,
-          child: IconButton(
-            icon: const Icon(Icons.arrow_back, color: Colors.black),
-            onPressed: () => Navigator.pop(context),
-          ),
-        ),
-        Positioned(
-          left: 0,
-          right: 0,
-          top: 36,
-          child: Center(
-            child: Text('Chỉnh sửa thông tin', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 22, fontFamily: 'Borel', color: Colors.black)),
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _EditProfileTextField extends StatelessWidget {
-  final String label;
-  final TextEditingController controller;
-  final TextInputType? keyboardType;
-  final Widget? suffix;
-  const _EditProfileTextField({required this.label, required this.controller, this.keyboardType, this.suffix});
-
-  @override
-  Widget build(BuildContext context) {
-    return TextFormField(
-      controller: controller,
-      keyboardType: keyboardType,
-      validator: (v) => (v == null || v.isEmpty) ? 'Không được để trống' : null,
-      decoration: InputDecoration(
-        labelText: label,
-        suffixIcon: suffix,
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-        filled: true,
-        fillColor: Colors.white,
-      ),
-    );
-  }
-}
-
-class _GenderDropdown extends StatelessWidget {
-  final String value;
-  final ValueChanged<String?> onChanged;
-  const _GenderDropdown({required this.value, required this.onChanged});
-
-  @override
-  Widget build(BuildContext context) {
-    return DropdownButtonFormField<String>(
-      value: value,
-      items: const [
-        DropdownMenuItem(value: 'Nam', child: Text('Nam')),
-        DropdownMenuItem(value: 'Nữ', child: Text('Nữ')),
-        DropdownMenuItem(value: 'Khác', child: Text('Khác')),
-      ],
-      onChanged: onChanged,
-      decoration: InputDecoration(
-        labelText: 'Giới tính',
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-        filled: true,
-        fillColor: Colors.white,
-      ),
-    );
-  }
-} 

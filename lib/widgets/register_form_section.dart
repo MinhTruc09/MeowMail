@@ -5,6 +5,8 @@ import 'package:mewmail/services/auth_service.dart';
 import 'package:mewmail/models/user/register_request.dart';
 import 'package:mewmail/models/user/login_request.dart';
 import 'package:mewmail/screens/main_screen.dart';
+import 'package:mewmail/widgets/common/custom_text_field.dart';
+import 'package:mewmail/widgets/common/custom_button.dart';
 import 'dart:io';
 import 'package:image_picker/image_picker.dart';
 
@@ -22,8 +24,6 @@ class _RegisterFormSectionState extends State<RegisterFormSection> {
   final _passwordController = TextEditingController();
   final _rePasswordController = TextEditingController();
   final _phoneController = TextEditingController();
-  bool _obscurePassword = true;
-  bool _obscureRePassword = true;
   bool _loading = false;
   File? _avatarFile;
 
@@ -60,21 +60,35 @@ class _RegisterFormSectionState extends State<RegisterFormSection> {
     final rePasswordError = validateRePassword(rePassword, password);
     final phoneError = phone.isEmpty ? 'Vui lòng nhập số điện thoại' : null;
 
-    if (emailError != null || nameError != null || passwordError != null || rePasswordError != null || phoneError != null) {
+    if (emailError != null ||
+        nameError != null ||
+        passwordError != null ||
+        rePasswordError != null ||
+        phoneError != null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(emailError ?? nameError ?? passwordError ?? rePasswordError ?? phoneError!)),
+        SnackBar(
+          content: Text(
+            emailError ??
+                nameError ??
+                passwordError ??
+                rePasswordError ??
+                phoneError!,
+          ),
+        ),
       );
       return;
     }
     setState(() => _loading = true);
     try {
-      await AuthService.register(RegisterRequest(
-        email: email,
-        password: password,
-        fullName: name,
-        phone: phone,
-        avatar: _avatarFile,
-      ));
+      await AuthService.register(
+        RegisterRequest(
+          email: email,
+          password: password,
+          fullName: name,
+          phone: phone,
+          avatar: _avatarFile,
+        ),
+      );
       // Đăng ký thành công, tự động đăng nhập
       try {
         await AuthService.login(LoginRequest(email: email, password: password));
@@ -84,16 +98,18 @@ class _RegisterFormSectionState extends State<RegisterFormSection> {
         Navigator.pushNamedAndRemoveUntil(context, '/main', (route) => false);
       } catch (e) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Đăng ký thành công, nhưng đăng nhập thất bại: $e')),
+          SnackBar(
+            content: Text('Đăng ký thành công, nhưng đăng nhập thất bại: $e'),
+          ),
         );
         Navigator.pushNamedAndRemoveUntil(context, '/login', (route) => false);
       }
     } catch (e, stack) {
       print('Đăng ký thất bại: $e');
       print(stack);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Đăng ký thất bại: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Đăng ký thất bại: $e')));
     } finally {
       setState(() => _loading = false);
     }
@@ -122,79 +138,65 @@ class _RegisterFormSectionState extends State<RegisterFormSection> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    TextFormField(
+                    CustomTextField(
+                      label: 'Email',
+                      hintText: 'abc@gmail.com',
                       controller: _emailController,
-                      decoration: const InputDecoration(
-                        labelText: 'Email',
-                        hintText: 'abc@gmail.com',
-                        border: OutlineInputBorder(),
-                      ),
                       keyboardType: TextInputType.emailAddress,
+                      prefixIcon: Icons.email,
                       validator: validateEmail,
                     ),
-                    const SizedBox(height: 12),
-                    TextFormField(
+                    const SizedBox(height: 16),
+                    CustomTextField(
+                      label: 'Họ và tên',
+                      hintText: 'Nguyễn Văn A',
                       controller: _nameController,
-                      decoration: const InputDecoration(
-                        labelText: 'Họ và tên',
-                        hintText: 'Nguyễn Văn A',
-                        border: OutlineInputBorder(),
-                      ),
+                      prefixIcon: Icons.person,
                       validator: validateFullName,
                     ),
-                    const SizedBox(height: 12),
-                    TextFormField(
+                    const SizedBox(height: 16),
+                    PasswordTextField(
+                      label: 'Mật khẩu',
+                      hintText: '************',
                       controller: _passwordController,
-                      decoration: InputDecoration(
-                        labelText: 'Mật khẩu',
-                        hintText: '************',
-                        border: const OutlineInputBorder(),
-                        suffixIcon: IconButton(
-                          icon: Icon(_obscurePassword ? Icons.visibility_off : Icons.visibility),
-                          onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
-                        ),
-                      ),
-                      obscureText: _obscurePassword,
                       validator: validatePassword,
                     ),
-                    const SizedBox(height: 12),
-                    TextFormField(
+                    const SizedBox(height: 16),
+                    PasswordTextField(
+                      label: 'Nhập lại mật khẩu',
+                      hintText: '************',
                       controller: _rePasswordController,
-                      decoration: InputDecoration(
-                        labelText: 'Nhập lại mật khẩu',
-                        hintText: '************',
-                        border: const OutlineInputBorder(),
-                        suffixIcon: IconButton(
-                          icon: Icon(_obscureRePassword ? Icons.visibility_off : Icons.visibility),
-                          onPressed: () => setState(() => _obscureRePassword = !_obscureRePassword),
-                        ),
-                      ),
-                      obscureText: _obscureRePassword,
-                      validator: (value) => validateRePassword(value, _passwordController.text),
+                      validator:
+                          (value) => validateRePassword(
+                            value,
+                            _passwordController.text,
+                          ),
                     ),
-                    const SizedBox(height: 12),
-                    TextFormField(
+                    const SizedBox(height: 16),
+                    CustomTextField(
+                      label: 'Số điện thoại',
+                      hintText: '0123456789',
                       controller: _phoneController,
-                      decoration: const InputDecoration(
-                        labelText: 'Số điện thoại',
-                        hintText: '0123456789',
-                        border: OutlineInputBorder(),
-                      ),
                       keyboardType: TextInputType.phone,
-                      validator: (value) => value == null || value.isEmpty ? 'Vui lòng nhập số điện thoại' : null,
+                      prefixIcon: Icons.phone,
+                      validator:
+                          (value) =>
+                              value == null || value.isEmpty
+                                  ? 'Vui lòng nhập số điện thoại'
+                                  : null,
                     ),
                     const SizedBox(height: 12),
                     Row(
                       children: [
                         _avatarFile != null
                             ? CircleAvatar(
-                          backgroundImage: FileImage(_avatarFile!),
-                          radius: 28,
-                        )
+                              backgroundImage: FileImage(_avatarFile!),
+                              radius: 28,
+                            )
                             : const CircleAvatar(
-                          radius: 28,
-                          child: Icon(Icons.person, size: 32),
-                        ),
+                              radius: 28,
+                              child: Icon(Icons.person, size: 32),
+                            ),
                         const SizedBox(width: 16),
                         ElevatedButton.icon(
                           onPressed: _pickAvatar,
@@ -207,17 +209,12 @@ class _RegisterFormSectionState extends State<RegisterFormSection> {
                         ),
                       ],
                     ),
-                    const SizedBox(height: 16),
-                    ElevatedButton(
+                    const SizedBox(height: 20),
+                    CustomButton(
+                      text: 'Đăng ký',
                       onPressed: _loading ? null : _submitRegister,
-                      child: _loading
-                          ? const CircularProgressIndicator(color: Colors.white)
-                          : const Text('Đăng ký'),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.black,
-                        foregroundColor: Colors.white,
-                        minimumSize: const Size(double.infinity, 48),
-                      ),
+                      isLoading: _loading,
+                      type: ButtonType.primary,
                     ),
                   ],
                 ),

@@ -7,6 +7,7 @@ class InboxThread {
   final String? lastContent;
   final String? lastSenderEmail;
   final String? lastReceiverEmail;
+  final List<String>? groupMembers;
   final DateTime? lastCreatedAt;
   final bool? read;
   final bool? spam;
@@ -18,6 +19,7 @@ class InboxThread {
     this.lastContent,
     this.lastSenderEmail,
     this.lastReceiverEmail,
+    this.groupMembers,
     this.lastCreatedAt,
     this.read,
     this.spam,
@@ -31,7 +33,14 @@ class InboxThread {
       lastContent: json['lastContent'] as String?,
       lastSenderEmail: json['lastSenderEmail'] as String?,
       lastReceiverEmail: json['lastReceiverEmail'] as String?,
-      lastCreatedAt: json['lastCreatedAt'] != null ? DateTime.tryParse(json['lastCreatedAt']) : null,
+      groupMembers:
+          json['groupMembers'] != null
+              ? List<String>.from(json['groupMembers'])
+              : null,
+      lastCreatedAt:
+          json['lastCreatedAt'] != null
+              ? DateTime.tryParse(json['lastCreatedAt'])
+              : null,
       read: json['read'] as bool?,
       spam: json['spam'] as bool?,
     );
@@ -45,6 +54,7 @@ class InboxThread {
       'lastContent': lastContent,
       'lastSenderEmail': lastSenderEmail,
       'lastReceiverEmail': lastReceiverEmail,
+      'groupMembers': groupMembers,
       'lastCreatedAt': lastCreatedAt?.toIso8601String(),
       'read': read,
       'spam': spam,

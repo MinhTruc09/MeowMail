@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:mewmail/widgets/register/register_validator.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:mewmail/services/mail_service.dart';
 import 'package:mewmail/models/mail/inbox_thread.dart';
 import 'package:mewmail/screens/chat_detail_screen.dart';
-import 'package:intl/intl.dart';
 import 'package:mewmail/widgets/mail_list_tile.dart';
-
+import 'package:mewmail/widgets/theme.dart';
+import 'package:mewmail/widgets/home_drawer.dart';
+import 'package:mewmail/widgets/send_mail_dialog.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -57,9 +57,9 @@ class _HomeScreenState extends State<HomeScreen> {
         _isLoadingData = false;
       });
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Vui lòng đăng nhập lại')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('Vui lòng đăng nhập lại')));
         Navigator.pushNamedAndRemoveUntil(context, '/login', (route) => false);
       }
       return;
@@ -67,8 +67,11 @@ class _HomeScreenState extends State<HomeScreen> {
 
     try {
       debugPrint('🔄 Đang load inbox với token: ${token!.substring(0, 10)}...');
-      final threads = await MailService.getInbox(token!, page: _currentPage, limit: _limit)
-          .timeout(const Duration(seconds: 15));
+      final threads = await MailService.getInbox(
+        token!,
+        page: _currentPage,
+        limit: _limit,
+      ).timeout(const Duration(seconds: 15));
       debugPrint('✅ Đã nhận được ${threads.length} threads từ API');
 
       if (mounted) {
@@ -83,14 +86,21 @@ class _HomeScreenState extends State<HomeScreen> {
       if (mounted) {
         setState(() {
           isLoading = false;
-          _error = 'Lỗi tải dữ liệu: ${e.toString().replaceAll('Exception: ', '')}';
+          _error =
+              'Lỗi tải dữ liệu: ${e.toString().replaceAll('Exception: ', '')}';
           _isLoadingData = false;
         });
         if (e.toString().contains('Session expired')) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Phiên đăng nhập hết hạn, vui lòng đăng nhập lại')),
+            const SnackBar(
+              content: Text('Phiên đăng nhập hết hạn, vui lòng đăng nhập lại'),
+            ),
           );
-          Navigator.pushNamedAndRemoveUntil(context, '/login', (route) => false);
+          Navigator.pushNamedAndRemoveUntil(
+            context,
+            '/login',
+            (route) => false,
+          );
         }
       }
       debugPrint('❌ Lỗi khi load inbox: $e');
@@ -108,66 +118,190 @@ class _HomeScreenState extends State<HomeScreen> {
   void _showSendMailDialog() {
     showDialog(
       context: context,
-      builder: (context) => SendMailDialog(
-        onSend: () => _loadData(force: true),
-      ),
+      builder:
+          (context) => SendMailDialog(onSend: () => _loadData(force: true)),
     );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: AppTheme.primaryWhite,
+      drawer: HomeDrawer(
+        userEmail: myEmail,
+        onRefresh: () => _loadData(force: true),
+      ),
       appBar: AppBar(
-        title: const Text('Mewmail'),
-        backgroundColor: Colors.yellow[700],
-        foregroundColor: Colors.black,
+        backgroundColor: AppTheme.primaryBlack,
+        foregroundColor: AppTheme.primaryWhite,
+        elevation: 0,
+        leading: Builder(
+          builder:
+              (context) => IconButton(
+                icon: const Icon(Icons.menu, color: AppTheme.primaryWhite),
+                onPressed: () => Scaffold.of(context).openDrawer(),
+              ),
+        ),
+        title: const Text(
+          'Hộp thư đến',
+          style: TextStyle(
+            color: AppTheme.primaryWhite,
+            fontSize: 20,
+            fontWeight: FontWeight.w600,
+            fontFamily: 'Borel',
+          ),
+        ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.logout),
-            onPressed: () async {
-              final prefs = await SharedPreferences.getInstance();
-              await prefs.remove('token');
-              await prefs.remove('refreshToken');
-              if (mounted) {
-                Navigator.pushNamedAndRemoveUntil(context, '/login', (route) => false);
-              }
+            icon: Stack(
+              children: [
+                const Icon(Icons.notifications, color: AppTheme.primaryWhite),
+                // Badge hiển thị số tin chưa đọc
+                if (inboxThreads
+                    .where(
+                      (thread) => thread.read == false || thread.read == null,
+                    )
+                    .isNotEmpty)
+                  Positioned(
+                    right: 0,
+                    top: 0,
+                    child: Container(
+                      padding: const EdgeInsets.all(2),
+                      decoration: const BoxDecoration(
+                        color: AppTheme.primaryYellow,
+                        shape: BoxShape.circle,
+                      ),
+                      constraints: const BoxConstraints(
+                        minWidth: 16,
+                        minHeight: 16,
+                      ),
+                      child: Text(
+                        '${inboxThreads.where((thread) => thread.read == false || thread.read == null).length}',
+                        style: const TextStyle(
+                          color: AppTheme.primaryBlack,
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+            onPressed: () {
+              Navigator.pushNamed(context, '/history');
+            },
+          ),
+          IconButton(
+            icon: CircleAvatar(
+              radius: 16,
+              backgroundColor: AppTheme.primaryYellow,
+              child: Text(
+                myEmail?.substring(0, 1).toUpperCase() ?? 'A',
+                style: const TextStyle(
+                  color: AppTheme.primaryBlack,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 14,
+                ),
+              ),
+            ),
+            onPressed: () {
+              Navigator.pushNamed(context, '/settings');
             },
           ),
         ],
       ),
-      body: isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : _error != null
-          ? Center(child: Text(_error!, style: const TextStyle(color: Colors.red)))
-          : RefreshIndicator(
-        onRefresh: _refresh,
-        child: inboxThreads.isEmpty
-            ? const Center(child: Text('Hộp thư trống'))
-            : ListView.builder(
-          itemCount: inboxThreads.length,
-          itemBuilder: (context, index) {
-            final thread = inboxThreads[index];
-            return MailListTile(
-              thread: thread,
-              myEmail: myEmail,
-              isStarred: false, // TODO: truyền trạng thái star nếu có
-              onTap: () {
-                if (thread.threadId > 0) {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => ChatDetailScreen(threadId: thread.threadId),
+      body: Column(
+        children: [
+          // Unread count info
+          if (inboxThreads
+              .where((thread) => thread.read == false || thread.read == null)
+              .isNotEmpty)
+            Container(
+              margin: const EdgeInsets.all(16),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              decoration: BoxDecoration(
+                color: AppTheme.primaryYellow.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(
+                  color: AppTheme.primaryYellow.withOpacity(0.3),
+                ),
+              ),
+              child: Row(
+                children: [
+                  const Icon(
+                    Icons.mail_outline,
+                    color: AppTheme.primaryBlack,
+                    size: 20,
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    'Bạn có ${inboxThreads.where((thread) => thread.read == false || thread.read == null).length} email chưa đọc',
+                    style: const TextStyle(
+                      color: AppTheme.primaryBlack,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                      fontFamily: 'Borel',
                     ),
-                  );
-                } else {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Không tìm thấy hội thoại!')),
-                  );
-                }
-              },
-            );
-          },
-        ),
+                  ),
+                ],
+              ),
+            ),
+          // Email list
+          Expanded(
+            child:
+                isLoading
+                    ? const Center(child: CircularProgressIndicator())
+                    : _error != null
+                    ? Center(
+                      child: Text(
+                        _error!,
+                        style: const TextStyle(color: Colors.red),
+                      ),
+                    )
+                    : RefreshIndicator(
+                      onRefresh: _refresh,
+                      child:
+                          inboxThreads.isEmpty
+                              ? const Center(child: Text('Hộp thư trống'))
+                              : ListView.builder(
+                                itemCount: inboxThreads.length,
+                                itemBuilder: (context, index) {
+                                  final thread = inboxThreads[index];
+                                  return MailListTile(
+                                    thread: thread,
+                                    myEmail: myEmail,
+                                    isStarred:
+                                        false, // TODO: truyền trạng thái star nếu có
+                                    onTap: () {
+                                      if (thread.threadId > 0) {
+                                        Navigator.push(
+                                          context,
+                                          MaterialPageRoute(
+                                            builder:
+                                                (_) => ChatDetailScreen(
+                                                  threadId: thread.threadId,
+                                                ),
+                                          ),
+                                        );
+                                      } else {
+                                        ScaffoldMessenger.of(
+                                          context,
+                                        ).showSnackBar(
+                                          const SnackBar(
+                                            content: Text(
+                                              'Không tìm thấy hội thoại!',
+                                            ),
+                                          ),
+                                        );
+                                      }
+                                    },
+                                  );
+                                },
+                              ),
+                    ),
+          ),
+        ],
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: _showSendMailDialog,
@@ -175,122 +309,6 @@ class _HomeScreenState extends State<HomeScreen> {
         foregroundColor: Colors.black,
         child: const Icon(Icons.create),
       ),
-    );
-  }
-}
-
-class SendMailDialog extends StatefulWidget {
-  final VoidCallback onSend;
-  const SendMailDialog({super.key, required this.onSend});
-
-  @override
-  State<SendMailDialog> createState() => _SendMailDialogState();
-}
-
-class _SendMailDialogState extends State<SendMailDialog> {
-  final _formKey = GlobalKey<FormState>();
-  final _receiverController = TextEditingController();
-  final _subjectController = TextEditingController();
-  final _contentController = TextEditingController();
-  bool _isSending = false;
-
-  @override
-  void dispose() {
-    _receiverController.dispose();
-    _subjectController.dispose();
-    _contentController.dispose();
-    super.dispose();
-  }
-
-  Future<void> _sendMail() async {
-    if (!_formKey.currentState!.validate()) return;
-
-    setState(() => _isSending = true);
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      final token = prefs.getString('token');
-      if (token == null) {
-        throw Exception('Vui lòng đăng nhập lại');
-      }
-      await MailService.sendMail(
-        token: token,
-        receiver: _receiverController.text.trim(),
-        subject: _subjectController.text.trim(),
-        content: _contentController.text.trim(),
-      );
-      debugPrint('✅ Gửi mail thành công');
-      if (mounted) {
-        Navigator.pop(context);
-        widget.onSend();
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Lỗi gửi mail: $e')),
-        );
-      }
-    } finally {
-      if (mounted) {
-        setState(() => _isSending = false);
-      }
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return AlertDialog(
-      title: const Text('Soạn thư'),
-      content: SingleChildScrollView(
-        child: Form(
-          key: _formKey,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextFormField(
-                controller: _receiverController,
-                decoration: const InputDecoration(
-                  labelText: 'Email người nhận',
-                  hintText: 'example@email.com',
-                  border: OutlineInputBorder(),
-                ),
-                keyboardType: TextInputType.emailAddress,
-                validator: validateEmail,
-              ),
-              const SizedBox(height: 8),
-              TextFormField(
-                controller: _subjectController,
-                decoration: const InputDecoration(
-                  labelText: 'Tiêu đề',
-                  border: OutlineInputBorder(),
-                ),
-                validator: (value) => value!.isEmpty ? 'Vui lòng nhập tiêu đề' : null,
-              ),
-              const SizedBox(height: 8),
-              TextFormField(
-                controller: _contentController,
-                decoration: const InputDecoration(
-                  labelText: 'Nội dung',
-                  border: OutlineInputBorder(),
-                ),
-                maxLines: 5,
-                validator: (value) => value!.isEmpty ? 'Vui lòng nhập nội dung' : null,
-              ),
-            ],
-          ),
-        ),
-      ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context),
-          child: const Text('Hủy'),
-        ),
-        ElevatedButton(
-          onPressed: _isSending ? null : _sendMail,
-          child: _isSending
-              ? const CircularProgressIndicator(color: Colors.white)
-              : const Text('Gửi'),
-        ),
-      ],
     );
   }
 }

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'main_screen.dart';
 import 'login_screen.dart';
+import 'package:mewmail/widgets/theme.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -38,6 +39,8 @@ class _SplashScreenState extends State<SplashScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final width = AppTheme.screenWidth(context);
+    final height = AppTheme.screenHeight(context);
     return Scaffold(
       body: Center(
         child: Column(

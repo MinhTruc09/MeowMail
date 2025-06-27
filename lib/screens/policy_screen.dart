@@ -15,9 +15,21 @@ class PolicyScreen extends StatelessWidget {
       body: Padding(
         padding: const EdgeInsets.all(24.0),
         child: SingleChildScrollView(
-          child: Text(
-            'Nội dung chính sách mẫu...\nBạn có thể chỉnh sửa nội dung này.',
-            style: Theme.of(context).textTheme.bodyLarge,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('Chính sách', style: Theme.of(context).textTheme.headlineLarge?.copyWith(fontFamily: 'Borel')),
+              const SizedBox(height: 16),
+              Text('Phiên bản: 1.0.0'),
+              Text('Người phát triển: Nguyễn Minh Trực'),
+              Text('SĐT: 0384548931'),
+              Text('Ngày sinh: 09/10/2004'),
+              Text('Sinh viên năm 3, trường Đại học Giao thông Vận tải TP.HCM (UTH) - Cơ sở 3, Quận 12'),
+              Text('Facebook: facebook.com/nguyen.truc.101966'),
+              Text('GitHub: github.com/MinhTruc09'),
+              const SizedBox(height: 24),
+              Text('Nội dung chính sách mẫu...\nBạn có thể chỉnh sửa nội dung này.'),
+            ],
           ),
         ),
       ),
