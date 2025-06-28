@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:mewmail/services/mail_service.dart';
+import 'package:mewmail/services/avatar_service.dart';
 import 'package:mewmail/models/mail/mail_detail.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:intl/intl.dart';
 import 'package:mewmail/widgets/theme.dart';
+import 'package:html/parser.dart' as html_parser;
 
 class ChatDetailScreen extends StatefulWidget {
   final int threadId;
@@ -27,6 +29,46 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
     _loadUserAndThread();
   }
 
+  /// Parse HTML content to plain text
+  String _parseHtmlContent(String htmlContent) {
+    try {
+      final document = html_parser.parse(htmlContent);
+      return document.body?.text ?? htmlContent;
+    } catch (e) {
+      debugPrint('Error parsing HTML: $e');
+      return htmlContent;
+    }
+  }
+
+  /// Build avatar widget with user image or fallback to initials
+  Widget _buildAvatar(String email, Color fallbackColor, String fallbackText) {
+    return FutureBuilder<String?>(
+      future: AvatarService.getUserAvatar(email),
+      builder: (context, snapshot) {
+        final avatarUrl = snapshot.data;
+
+        return CircleAvatar(
+          radius: 20,
+          backgroundColor: AvatarService.getAvatarColor(email),
+          backgroundImage:
+              avatarUrl != null && avatarUrl.isNotEmpty
+                  ? NetworkImage(avatarUrl)
+                  : null,
+          child:
+              avatarUrl == null || avatarUrl.isEmpty
+                  ? Text(
+                    AvatarService.getAvatarInitials(email),
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  )
+                  : null,
+        );
+      },
+    );
+  }
+
   Future<void> _loadUserAndThread() async {
     final prefs = await SharedPreferences.getInstance();
     myEmail = prefs.getString('email');
@@ -43,7 +85,8 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
       final token = prefs.getString('token');
       if (token == null) throw Exception('Vui lòng đăng nhập lại');
       final data = await MailService.getThreadDetail(token, widget.threadId);
-      data.sort((a, b) => a.createdAt.compareTo(b.createdAt));
+      // Sort by newest first (reverse chronological order)
+      data.sort((a, b) => b.createdAt.compareTo(a.createdAt));
       setState(() {
         mails = data;
         isLoading = false;
@@ -111,8 +154,16 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
   }
 
   String _getDisplayName(String? email, String? name) {
-    if (name != null && name.isNotEmpty) return name;
-    if (email == null || email.isEmpty) return 'Unknown';
+    if (name != null && name.isNotEmpty && name != '(không xác định)')
+      return name;
+    if (email == null || email.isEmpty || email == '(không xác định)')
+      return 'Unknown';
+
+    // Handle URLs (like cloudinary URLs) - extract meaningful part or return Unknown
+    if (email.startsWith('http://') || email.startsWith('https://')) {
+      debugPrint('⚠️ Received URL instead of email: $email');
+      return 'Unknown';
+    }
 
     // Extract name from email if it contains a name part
     if (email.contains('@')) {
@@ -138,7 +189,9 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
           : 'Unknown';
     }
 
-    return email;
+    // If it's not an email format, return Unknown
+    debugPrint('⚠️ Invalid email format: $email');
+    return 'Unknown';
   }
 
   @override
@@ -211,7 +264,7 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
                                 : 'U';
                         final avatarColor =
                             isMe
-                                ? Colors.blue[600]
+                                ? Colors.blue[600] ?? Colors.blue
                                 : Colors.primaries[mail.senderEmail.hashCode %
                                     Colors.primaries.length];
 
@@ -243,16 +296,10 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
                                 ),
                                 child: Row(
                                   children: [
-                                    CircleAvatar(
-                                      radius: 20,
-                                      backgroundColor: avatarColor,
-                                      child: Text(
-                                        avatarText,
-                                        style: const TextStyle(
-                                          color: Colors.white,
-                                          fontWeight: FontWeight.w500,
-                                        ),
-                                      ),
+                                    _buildAvatar(
+                                      mail.senderEmail,
+                                      avatarColor,
+                                      avatarText,
                                     ),
                                     const SizedBox(width: 12),
                                     Expanded(
@@ -325,7 +372,7 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
                                         ),
                                       ),
                                     Text(
-                                      mail.content,
+                                      _parseHtmlContent(mail.content),
                                       style: const TextStyle(
                                         fontSize: 14,
                                         height: 1.5,

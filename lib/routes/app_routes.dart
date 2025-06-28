@@ -5,6 +5,7 @@ import 'package:mewmail/screens/main_screen.dart';
 import 'package:mewmail/screens/register_screen.dart';
 import 'package:mewmail/screens/splash_screen.dart';
 import 'package:mewmail/screens/chat_detail_screen.dart';
+import 'package:mewmail/screens/search_screen.dart';
 import 'package:mewmail/screens/about_screen.dart';
 import 'package:mewmail/screens/policy_screen.dart';
 import 'package:mewmail/screens/terms_screen.dart';
@@ -16,6 +17,7 @@ final Map<String, WidgetBuilder> appRoutes = {
   '/register': (context) => const RegisterScreen(),
   '/splash': (context) => const SplashScreen(),
   '/main': (context) => const MainScreen(),
+  '/search': (context) => const SearchScreen(),
 };
 
 Route<dynamic> onGenerateRoute(RouteSettings settings) {
@@ -36,6 +38,9 @@ Route<dynamic> onGenerateRoute(RouteSettings settings) {
       break;
     case '/main':
       page = const MainScreen();
+      break;
+    case '/search':
+      page = const SearchScreen();
       break;
     case '/chat_detail':
       final threadId = settings.arguments as int;

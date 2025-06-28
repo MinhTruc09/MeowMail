@@ -12,14 +12,20 @@ class UserService {
   static Future<ApiResponse<ProfileResponseDto>> myProfile(String token) async {
     try {
       final uri = Uri.parse('$baseUrl/api/user/my-profile');
-      final response = await http.get(uri, headers: {
-        'Authorization': 'Bearer $token',
-      }).timeout(const Duration(seconds: 10));
-      debugPrint('MyProfile response: ${response.statusCode} - ${response.body}');
+      final response = await http
+          .get(uri, headers: {'Authorization': 'Bearer $token'})
+          .timeout(const Duration(seconds: 10));
+      debugPrint(
+        'MyProfile response: ${response.statusCode} - ${response.body}',
+      );
       if (response.statusCode == 200) {
         final json = jsonDecode(response.body);
-        if (json['data'] == null) throw Exception('Missing data in profile response');
-        return ApiResponse.fromJson(json, (data) => ProfileResponseDto.fromJson(data));
+        if (json['data'] == null)
+          throw Exception('Missing data in profile response');
+        return ApiResponse.fromJson(
+          json,
+          (data) => ProfileResponseDto.fromJson(data),
+        );
       } else if (response.statusCode == 403) {
         final newToken = await AuthService.refreshTokenIfNeeded(null);
         if (newToken != null) {
@@ -49,15 +55,21 @@ class UserService {
       request.fields['fullName'] = fullName;
       request.fields['phone'] = phone;
       if (avatarPath != null) {
-        request.files.add(await http.MultipartFile.fromPath(
-          'avatar',
-          avatarPath,
-          contentType: MediaType('image', 'png'),
-        ));
+        request.files.add(
+          await http.MultipartFile.fromPath(
+            'avatar',
+            avatarPath,
+            contentType: MediaType('image', 'png'),
+          ),
+        );
       }
-      final streamedResponse = await request.send().timeout(const Duration(seconds: 10));
+      final streamedResponse = await request.send().timeout(
+        const Duration(seconds: 10),
+      );
       final response = await http.Response.fromStream(streamedResponse);
-      debugPrint('Update profile response: ${response.statusCode} - ${response.body}');
+      debugPrint(
+        'Update profile response: ${response.statusCode} - ${response.body}',
+      );
       if (response.statusCode == 200) {
         final json = jsonDecode(response.body);
         return ApiResponse.fromJson(json, (data) => data);
@@ -93,9 +105,13 @@ class UserService {
       request.headers['Authorization'] = 'Bearer $token';
       request.fields['oldPassword'] = oldPassword;
       request.fields['newPassword'] = newPassword;
-      final streamedResponse = await request.send().timeout(const Duration(seconds: 10));
+      final streamedResponse = await request.send().timeout(
+        const Duration(seconds: 10),
+      );
       final response = await http.Response.fromStream(streamedResponse);
-      debugPrint('Change password response: ${response.statusCode} - ${response.body}');
+      debugPrint(
+        'Change password response: ${response.statusCode} - ${response.body}',
+      );
       if (response.statusCode == 200) {
         final json = jsonDecode(response.body);
         return ApiResponse.fromJson(json, (data) => data);
@@ -115,6 +131,54 @@ class UserService {
       }
     } catch (e) {
       debugPrint('Exception in changePass: $e');
+      rethrow;
+    }
+  }
+
+  /// Gợi ý người dùng email khi search
+  static Future<ApiResponse<List<String>>> searchMail({
+    required String token,
+    required String query,
+  }) async {
+    try {
+      debugPrint('🔍 Search mail: query=$query');
+
+      final uri = Uri.parse(
+        '$baseUrl/api/user/search-mail',
+      ).replace(queryParameters: {'q': query});
+
+      final response = await http
+          .get(
+            uri,
+            headers: {
+              'Authorization': 'Bearer $token',
+              'Content-Type': 'application/json',
+            },
+          )
+          .timeout(const Duration(seconds: 10));
+
+      debugPrint(
+        '🔍 Search response: ${response.statusCode} - ${response.body}',
+      );
+
+      if (response.statusCode == 200) {
+        final json = jsonDecode(response.body);
+        if (json['data'] == null) {
+          throw Exception('Missing data in search response');
+        }
+        return ApiResponse.fromJson(json, (data) => List<String>.from(data));
+      } else if (response.statusCode == 403 || response.statusCode == 401) {
+        final newToken = await AuthService.refreshTokenIfNeeded(token);
+        if (newToken != null) {
+          return await searchMail(token: newToken, query: query);
+        } else {
+          throw Exception('Session expired, please log in again');
+        }
+      } else {
+        throw Exception('Search failed: ${response.body}');
+      }
+    } catch (e) {
+      debugPrint('❌ Lỗi searchMail: $e');
       rethrow;
     }
   }

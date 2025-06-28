@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:mewmail/services/user_service.dart';
+import 'package:mewmail/services/auth_service.dart';
 import 'package:mewmail/widgets/theme.dart';
 import 'package:mewmail/widgets/common/custom_text_field.dart';
 import 'package:mewmail/widgets/common/custom_button.dart' as custom;
@@ -19,7 +20,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
   final _oldPasswordController = TextEditingController();
   final _newPasswordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
-  
+
   bool _isLoading = false;
 
   @override
@@ -38,16 +39,18 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
     try {
       final prefs = await SharedPreferences.getInstance();
       final token = prefs.getString('token');
-      
+
       if (token == null) {
         throw Exception('Vui lòng đăng nhập lại');
       }
 
+      debugPrint('🔄 Attempting to change password...');
       await UserService.changePass(
         token: token,
         oldPassword: _oldPasswordController.text.trim(),
         newPassword: _newPasswordController.text.trim(),
       );
+      debugPrint('✅ Password changed successfully');
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -59,13 +62,30 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
         Navigator.pop(context);
       }
     } catch (e) {
+      debugPrint('❌ Change password error: $e');
+
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Lỗi đổi mật khẩu: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
+        // Check if session expired and redirect to login
+        if (AuthService.shouldRedirectToLogin(e.toString())) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Phiên đăng nhập hết hạn, vui lòng đăng nhập lại'),
+              backgroundColor: Colors.orange,
+            ),
+          );
+          Navigator.pushNamedAndRemoveUntil(
+            context,
+            '/login',
+            (route) => false,
+          );
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Lỗi đổi mật khẩu: $e'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
       }
     } finally {
       if (mounted) {
@@ -86,18 +106,27 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
         ),
       ),
       body: ResponsiveContainer(
-        padding: EdgeInsets.all(AppTheme.responsivePadding(context, AppTheme.defaultPadding)),
+        padding: EdgeInsets.all(
+          AppTheme.responsivePadding(context, AppTheme.defaultPadding),
+        ),
         child: SingleChildScrollView(
           child: Form(
             key: _formKey,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                SizedBox(height: AppTheme.responsivePadding(context, AppTheme.largePadding)),
-                
+                SizedBox(
+                  height: AppTheme.responsivePadding(
+                    context,
+                    AppTheme.largePadding,
+                  ),
+                ),
+
                 // Header
                 CustomCard(
-                  backgroundColor: AppTheme.primaryYellow.withValues(alpha: 0.1),
+                  backgroundColor: AppTheme.primaryYellow.withValues(
+                    alpha: 0.1,
+                  ),
                   child: Column(
                     children: [
                       Icon(
@@ -105,7 +134,12 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                         size: AppTheme.responsiveWidth(context, 0.12),
                         color: AppTheme.primaryBlack,
                       ),
-                      SizedBox(height: AppTheme.responsivePadding(context, AppTheme.smallPadding)),
+                      SizedBox(
+                        height: AppTheme.responsivePadding(
+                          context,
+                          AppTheme.smallPadding,
+                        ),
+                      ),
                       Text(
                         'Thay đổi mật khẩu của bạn',
                         style: TextStyle(
@@ -116,7 +150,12 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                         ),
                         textAlign: TextAlign.center,
                       ),
-                      SizedBox(height: AppTheme.responsivePadding(context, AppTheme.smallPadding)),
+                      SizedBox(
+                        height: AppTheme.responsivePadding(
+                          context,
+                          AppTheme.smallPadding,
+                        ),
+                      ),
                       Text(
                         'Vui lòng nhập mật khẩu cũ và mật khẩu mới để thay đổi',
                         style: TextStyle(
@@ -129,9 +168,14 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                     ],
                   ),
                 ),
-                
-                SizedBox(height: AppTheme.responsivePadding(context, AppTheme.largePadding)),
-                
+
+                SizedBox(
+                  height: AppTheme.responsivePadding(
+                    context,
+                    AppTheme.largePadding,
+                  ),
+                ),
+
                 // Old Password Field
                 PasswordTextField(
                   label: 'Mật khẩu cũ',
@@ -143,9 +187,14 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                     return null;
                   },
                 ),
-                
-                SizedBox(height: AppTheme.responsivePadding(context, AppTheme.defaultPadding)),
-                
+
+                SizedBox(
+                  height: AppTheme.responsivePadding(
+                    context,
+                    AppTheme.defaultPadding,
+                  ),
+                ),
+
                 // New Password Field
                 PasswordTextField(
                   label: 'Mật khẩu mới',
@@ -160,9 +209,14 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                     return null;
                   },
                 ),
-                
-                SizedBox(height: AppTheme.responsivePadding(context, AppTheme.defaultPadding)),
-                
+
+                SizedBox(
+                  height: AppTheme.responsivePadding(
+                    context,
+                    AppTheme.defaultPadding,
+                  ),
+                ),
+
                 // Confirm Password Field
                 PasswordTextField(
                   label: 'Xác nhận mật khẩu mới',
@@ -177,9 +231,14 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                     return null;
                   },
                 ),
-                
-                SizedBox(height: AppTheme.responsivePadding(context, AppTheme.largePadding * 2)),
-                
+
+                SizedBox(
+                  height: AppTheme.responsivePadding(
+                    context,
+                    AppTheme.largePadding * 2,
+                  ),
+                ),
+
                 // Change Password Button
                 custom.CustomButton(
                   text: 'Đổi mật khẩu',

@@ -7,6 +7,7 @@ import 'package:mewmail/widgets/common/custom_widgets.dart';
 import 'package:mewmail/widgets/common/custom_text_field.dart';
 import 'package:mewmail/widgets/common/custom_button.dart';
 import 'package:mewmail/services/user_service.dart';
+import 'package:mewmail/services/auth_service.dart';
 import 'package:mewmail/models/user/profile_response.dart';
 
 class EditProfileScreen extends StatefulWidget {
@@ -57,19 +58,52 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       }
 
       final response = await UserService.myProfile(token);
+
+      // Debug: Print actual API response
+      debugPrint('🔍 Profile API Response:');
+      debugPrint('  - Email: ${response.data?.email}');
+      debugPrint('  - Fullname: ${response.data?.fullname}');
+      debugPrint('  - Phone: ${response.data?.phone}');
+      debugPrint('  - Avatar: ${response.data?.avatar}');
+
       setState(() {
         _profile = response.data;
         _fullNameController.text = _profile?.fullname ?? '';
         _phoneController.text = _profile?.phone ?? '';
-        _emailController.text = _profile?.email ?? '';
+
+        // Validate email field - if it's a URL, don't use it
+        final emailValue = _profile?.email ?? '';
+        if (emailValue.startsWith('http://') ||
+            emailValue.startsWith('https://')) {
+          debugPrint('⚠️ Email field contains URL: $emailValue');
+          _emailController.text = ''; // Leave empty if it's a URL
+        } else {
+          _emailController.text = emailValue;
+        }
+
         _isLoading = false;
       });
     } catch (e) {
       setState(() => _isLoading = false);
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Lỗi tải thông tin: $e')));
+        // Check if session expired and redirect to login
+        if (AuthService.shouldRedirectToLogin(e.toString())) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Phiên đăng nhập hết hạn, vui lòng đăng nhập lại'),
+              backgroundColor: Colors.orange,
+            ),
+          );
+          Navigator.pushNamedAndRemoveUntil(
+            context,
+            '/login',
+            (route) => false,
+          );
+        } else {
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text('Lỗi tải thông tin: $e')));
+        }
       }
     }
   }

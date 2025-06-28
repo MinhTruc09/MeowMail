@@ -4,6 +4,7 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:mewmail/models/user/login_request.dart';
 import 'package:mewmail/models/user/register_request.dart';
+import 'package:mewmail/models/user/refresh_token_request.dart';
 import 'package:http_parser/http_parser.dart';
 
 class AuthService {
@@ -45,48 +46,6 @@ class AuthService {
     } catch (e) {
       debugPrint('❌ Lỗi đăng nhập: $e');
       rethrow;
-    }
-  }
-
-  static Future<String?> refreshTokenIfNeeded(String? oldToken) async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      final refreshToken = prefs.getString('refreshToken');
-      final email = prefs.getString('email');
-      if (refreshToken == null || email == null) {
-        debugPrint('❌ Không tìm thấy refreshToken hoặc email');
-        return null;
-      }
-      debugPrint('🔄 Gửi yêu cầu refresh token');
-      final response = await http
-          .post(
-            Uri.parse('$baseUrl/api/auth/Refresh-token'),
-            headers: {'Content-Type': 'application/json'},
-            body: jsonEncode({'email': email, 'password': refreshToken}),
-          )
-          .timeout(const Duration(seconds: 10));
-      debugPrint(
-        '📬 Phản hồi refresh token: ${response.statusCode} - ${response.body}',
-      );
-      if (response.statusCode == 200) {
-        final json = jsonDecode(response.body);
-        final newToken = json['data']['accessToken'];
-        final newRefreshToken = json['data']['refreshToken'];
-        if (newToken == null) {
-          throw Exception('Token mới không có trong phản hồi');
-        }
-        await prefs.setString('token', newToken);
-        if (newRefreshToken != null) {
-          await prefs.setString('refreshToken', newRefreshToken);
-        }
-        debugPrint('✅ Refresh token thành công');
-        return newToken;
-      } else {
-        throw Exception('Refresh token thất bại: ${response.body}');
-      }
-    } catch (e) {
-      debugPrint('❌ Lỗi refresh token: $e');
-      return null;
     }
   }
 
@@ -136,5 +95,94 @@ class AuthService {
     await prefs.remove('refreshToken');
     await prefs.remove('email');
     debugPrint('✅ Đăng xuất và xóa token, refreshToken, email thành công');
+  }
+
+  /// Refresh access token using refresh token
+  static Future<String?> refreshToken() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final email = prefs.getString('email');
+      final refreshToken = prefs.getString('refreshToken');
+
+      if (email == null || refreshToken == null) {
+        debugPrint('❌ Không có email hoặc refresh token');
+        return null;
+      }
+
+      debugPrint('🔄 Refresh token cho: $email');
+
+      final request = RefreshTokenRequest(
+        email: email,
+        password: refreshToken, // API sử dụng password field cho refresh token
+      );
+
+      final response = await http
+          .post(
+            Uri.parse('$baseUrl/api/auth/Refresh-token'),
+            headers: {'Content-Type': 'application/json'},
+            body: jsonEncode(request.toJson()),
+          )
+          .timeout(const Duration(seconds: 10));
+
+      debugPrint(
+        '🔄 Refresh response: ${response.statusCode} - ${response.body}',
+      );
+
+      if (response.statusCode == 200) {
+        final json = jsonDecode(response.body);
+        final newToken = json['data']['accessToken'];
+        final newRefreshToken = json['data']['refreshToken'];
+
+        if (newToken != null) {
+          await prefs.setString('token', newToken);
+          if (newRefreshToken != null) {
+            await prefs.setString('refreshToken', newRefreshToken);
+          }
+          debugPrint('✅ Refresh token thành công');
+          return newToken;
+        }
+      }
+
+      debugPrint('❌ Refresh token thất bại: ${response.body}');
+
+      // If refresh token fails (like duplicate tokens), force logout
+      if (response.statusCode == 401 || response.statusCode == 403) {
+        debugPrint('🚪 Force logout due to refresh token failure');
+        await logout();
+      }
+
+      return null;
+    } catch (e) {
+      debugPrint('❌ Lỗi refresh token: $e');
+      return null;
+    }
+  }
+
+  /// Helper method để tự động refresh token khi cần
+  static Future<String?> refreshTokenIfNeeded(String? currentToken) async {
+    try {
+      // Thử refresh token
+      final newToken = await refreshToken();
+      if (newToken != null) {
+        return newToken;
+      }
+
+      // Nếu refresh thất bại, logout user
+      debugPrint('🚪 Session expired - logging out user');
+      await logout();
+      return null;
+    } catch (e) {
+      debugPrint('❌ Lỗi refreshTokenIfNeeded: $e');
+      await logout();
+      return null;
+    }
+  }
+
+  /// Check if user needs to be redirected to login
+  static bool shouldRedirectToLogin(String errorMessage) {
+    return errorMessage.contains('Session expired') ||
+        errorMessage.contains('401') ||
+        errorMessage.contains('403') ||
+        errorMessage.contains('Refresh token thất bại');
   }
 }

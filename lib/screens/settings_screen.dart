@@ -34,15 +34,19 @@ class _SettingsScreenState extends State<SettingsScreen> {
     }
     try {
       final res = await UserService.myProfile(token);
-      setState(() {
-        profile = res.data;
-        isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          profile = res.data;
+          isLoading = false;
+        });
+      }
     } catch (e) {
-      setState(() => isLoading = false);
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Lỗi lấy thông tin: $e')));
+      if (mounted) {
+        setState(() => isLoading = false);
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Lỗi lấy thông tin: $e')));
+      }
     }
   }
 
@@ -115,7 +119,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
         children: [
           // Profile Section
           Container(
-            padding: EdgeInsets.all(AppTheme.responsivePadding(context, AppTheme.defaultPadding)),
+            padding: EdgeInsets.all(
+              AppTheme.responsivePadding(context, AppTheme.defaultPadding),
+            ),
             child: ProfileCard(
               name: profile!.fullname,
               email: profile!.email,
@@ -125,92 +131,95 @@ class _SettingsScreenState extends State<SettingsScreen> {
           Expanded(
             child: Container(
               padding: EdgeInsets.symmetric(
-                horizontal: AppTheme.responsivePadding(context, AppTheme.defaultPadding),
+                horizontal: AppTheme.responsivePadding(
+                  context,
+                  AppTheme.defaultPadding,
+                ),
               ),
               child: ListView(
                 padding: EdgeInsets.zero,
                 children: [
-                InfoCard(
-                  title: 'Chỉnh sửa thông tin',
-                  icon: Icons.edit,
-                  trailing: const Icon(Icons.chevron_right),
-                  onTap: () async {
-                    final result = await Navigator.pushNamed(
-                      context,
-                      '/edit_profile',
-                    );
-                    if (result == true) {
-                      _loadProfile(); // Reload profile after successful edit
-                    }
-                  },
-                ),
-                InfoCard(
-                  title: 'Đổi mật khẩu',
-                  icon: Icons.lock,
-                  trailing: const Icon(Icons.chevron_right),
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const ChangePasswordScreen(),
-                      ),
-                    );
-                  },
-                ),
-                InfoCard(
-                  title: 'Chuyển đổi tài khoản',
-                  icon: Icons.switch_account,
-                  trailing: const Icon(Icons.add),
-                  onTap: () {
-                    // TODO: Chuyển đổi tài khoản
-                  },
-                ),
-                InfoCard(
-                  title: 'Chế độ tối',
-                  icon: Icons.dark_mode,
-                  trailing: Switch(
-                    value: false, // TODO: Thay bằng biến trạng thái dark mode
-                    onChanged: (val) {
-                      // TODO: Xử lý chuyển dark mode
+                  InfoCard(
+                    title: 'Chỉnh sửa thông tin',
+                    icon: Icons.edit,
+                    trailing: const Icon(Icons.chevron_right),
+                    onTap: () async {
+                      final result = await Navigator.pushNamed(
+                        context,
+                        '/edit_profile',
+                      );
+                      if (result == true) {
+                        _loadProfile(); // Reload profile after successful edit
+                      }
                     },
                   ),
-                ),
-                InfoCard(
-                  title: 'Tìm hiểu về chúng tôi',
-                  icon: Icons.info_outline,
-                  trailing: const Icon(Icons.chevron_right),
-                  backgroundColor: AppTheme.primaryYellow.withValues(
-                    alpha: 0.7,
+                  InfoCard(
+                    title: 'Đổi mật khẩu',
+                    icon: Icons.lock,
+                    trailing: const Icon(Icons.chevron_right),
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const ChangePasswordScreen(),
+                        ),
+                      );
+                    },
                   ),
-                  onTap: () => Navigator.pushNamed(context, '/about'),
-                ),
-                InfoCard(
-                  title: 'Chính sách',
-                  icon: Icons.policy,
-                  trailing: const Icon(Icons.chevron_right),
-                  backgroundColor: AppTheme.primaryYellow.withValues(
-                    alpha: 0.7,
+                  InfoCard(
+                    title: 'Chuyển đổi tài khoản',
+                    icon: Icons.switch_account,
+                    trailing: const Icon(Icons.add),
+                    onTap: () {
+                      // TODO: Chuyển đổi tài khoản
+                    },
                   ),
-                  onTap: () => Navigator.pushNamed(context, '/policy'),
-                ),
-                InfoCard(
-                  title: 'Điều khoản dịch vụ',
-                  icon: Icons.rule,
-                  trailing: const Icon(Icons.chevron_right),
-                  backgroundColor: AppTheme.primaryYellow.withValues(
-                    alpha: 0.7,
+                  InfoCard(
+                    title: 'Chế độ tối',
+                    icon: Icons.dark_mode,
+                    trailing: Switch(
+                      value: false, // TODO: Thay bằng biến trạng thái dark mode
+                      onChanged: (val) {
+                        // TODO: Xử lý chuyển dark mode
+                      },
+                    ),
                   ),
-                  onTap: () => Navigator.pushNamed(context, '/terms'),
-                ),
-                InfoCard(
-                  title: 'Đăng xuất',
-                  icon: Icons.logout,
-                  backgroundColor: Colors.white,
-                  onTap: _logout,
-                ),
-              ],
+                  InfoCard(
+                    title: 'Tìm hiểu về chúng tôi',
+                    icon: Icons.info_outline,
+                    trailing: const Icon(Icons.chevron_right),
+                    backgroundColor: AppTheme.primaryYellow.withValues(
+                      alpha: 0.7,
+                    ),
+                    onTap: () => Navigator.pushNamed(context, '/about'),
+                  ),
+                  InfoCard(
+                    title: 'Chính sách',
+                    icon: Icons.policy,
+                    trailing: const Icon(Icons.chevron_right),
+                    backgroundColor: AppTheme.primaryYellow.withValues(
+                      alpha: 0.7,
+                    ),
+                    onTap: () => Navigator.pushNamed(context, '/policy'),
+                  ),
+                  InfoCard(
+                    title: 'Điều khoản dịch vụ',
+                    icon: Icons.rule,
+                    trailing: const Icon(Icons.chevron_right),
+                    backgroundColor: AppTheme.primaryYellow.withValues(
+                      alpha: 0.7,
+                    ),
+                    onTap: () => Navigator.pushNamed(context, '/terms'),
+                  ),
+                  InfoCard(
+                    title: 'Đăng xuất',
+                    icon: Icons.logout,
+                    backgroundColor: Colors.white,
+                    onTap: _logout,
+                  ),
+                ],
+              ),
             ),
-          ),
           ),
         ],
       ),

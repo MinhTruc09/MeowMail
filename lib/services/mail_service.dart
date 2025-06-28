@@ -1,8 +1,11 @@
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:mewmail/models/mail/inbox_thread.dart';
 import 'package:mewmail/models/mail/mail_detail.dart';
+import 'package:mewmail/models/mail/mail_status_request.dart';
+import 'package:mewmail/models/mail/api_response.dart';
 import 'package:mewmail/services/auth_service.dart';
 
 class MailService {
@@ -217,6 +220,251 @@ class MailService {
       }
     } catch (e) {
       debugPrint('❌ Lỗi replyMail: $e');
+      rethrow;
+    }
+  }
+
+  /// Mark emails as spam
+  static Future<ApiResponse<InboxThread>> spamMail({
+    required String token,
+    required List<int> threadIds,
+  }) async {
+    try {
+      debugPrint('🚫 Spam mail: threadIds=$threadIds');
+
+      final request = MailStatusRequestDto(threadId: threadIds);
+      final response = await http
+          .post(
+            Uri.parse('$baseUrl/api/mail/spam-mail'),
+            headers: {
+              'Authorization': 'Bearer $token',
+              'Content-Type': 'application/json',
+            },
+            body: jsonEncode(request.toJson()),
+          )
+          .timeout(const Duration(seconds: 15));
+
+      debugPrint('🚫 Spam response: ${response.statusCode} - ${response.body}');
+
+      if (response.statusCode == 200) {
+        final json = jsonDecode(response.body);
+        return ApiResponse.fromJson(json, (data) => InboxThread.fromJson(data));
+      } else if (response.statusCode == 403 || response.statusCode == 401) {
+        final newToken = await AuthService.refreshTokenIfNeeded(token);
+        if (newToken != null) {
+          return await spamMail(token: newToken, threadIds: threadIds);
+        } else {
+          throw Exception('Session expired, please log in again');
+        }
+      } else {
+        throw Exception('Spam mail failed: ${response.body}');
+      }
+    } catch (e) {
+      debugPrint('❌ Lỗi spamMail: $e');
+      rethrow;
+    }
+  }
+
+  /// Mark emails as read
+  static Future<ApiResponse<InboxThread>> readMail({
+    required String token,
+    required List<int> threadIds,
+  }) async {
+    try {
+      debugPrint('👁️ Read mail: threadIds=$threadIds');
+
+      final request = MailStatusRequestDto(threadId: threadIds);
+      final response = await http
+          .post(
+            Uri.parse('$baseUrl/api/mail/read-mail'),
+            headers: {
+              'Authorization': 'Bearer $token',
+              'Content-Type': 'application/json',
+            },
+            body: jsonEncode(request.toJson()),
+          )
+          .timeout(const Duration(seconds: 15));
+
+      debugPrint(
+        '👁️ Read response: ${response.statusCode} - ${response.body}',
+      );
+
+      if (response.statusCode == 200) {
+        final json = jsonDecode(response.body);
+        return ApiResponse.fromJson(json, (data) => InboxThread.fromJson(data));
+      } else if (response.statusCode == 403 || response.statusCode == 401) {
+        final newToken = await AuthService.refreshTokenIfNeeded(token);
+        if (newToken != null) {
+          return await readMail(token: newToken, threadIds: threadIds);
+        } else {
+          throw Exception('Session expired, please log in again');
+        }
+      } else {
+        throw Exception('Read mail failed: ${response.body}');
+      }
+    } catch (e) {
+      debugPrint('❌ Lỗi readMail: $e');
+      rethrow;
+    }
+  }
+
+  /// Delete email threads
+  static Future<ApiResponse> deleteThreads({
+    required String token,
+    required List<int> threadIds,
+  }) async {
+    try {
+      debugPrint('🗑️ Delete threads: threadIds=$threadIds');
+
+      final response = await http
+          .post(
+            Uri.parse('$baseUrl/api/mail/delete-threads'),
+            headers: {
+              'Authorization': 'Bearer $token',
+              'Content-Type': 'application/json',
+            },
+            body: jsonEncode(threadIds),
+          )
+          .timeout(const Duration(seconds: 15));
+
+      debugPrint(
+        '🗑️ Delete response: ${response.statusCode} - ${response.body}',
+      );
+
+      if (response.statusCode == 200) {
+        final json = jsonDecode(response.body);
+        return ApiResponse.fromJson(json, (data) => data);
+      } else if (response.statusCode == 403 || response.statusCode == 401) {
+        final newToken = await AuthService.refreshTokenIfNeeded(token);
+        if (newToken != null) {
+          return await deleteThreads(token: newToken, threadIds: threadIds);
+        } else {
+          throw Exception('Session expired, please log in again');
+        }
+      } else {
+        throw Exception('Delete threads failed: ${response.body}');
+      }
+    } catch (e) {
+      debugPrint('❌ Lỗi deleteThreads: $e');
+      rethrow;
+    }
+  }
+
+  /// Get spam emails (fallback to filtering from inbox since API endpoint doesn't exist)
+  static Future<List<InboxThread>> getSpamEmails(
+    String token, {
+    int page = 1,
+    int limit = 10,
+  }) async {
+    try {
+      debugPrint('📡 Getting spam emails from inbox (fallback)');
+      // Since /api/mail/spam doesn't exist, get from inbox and filter
+      final allThreads = await getInbox(token, page: page, limit: limit);
+      return allThreads.where((thread) => thread.spam == true).toList();
+    } catch (e) {
+      debugPrint('❌ Lỗi getSpamEmails: $e');
+      rethrow;
+    }
+  }
+
+  /// Get deleted emails (use local storage since API endpoint doesn't exist)
+  static Future<List<InboxThread>> getDeletedEmails(
+    String token, {
+    int page = 1,
+    int limit = 10,
+  }) async {
+    try {
+      debugPrint('📡 Getting deleted emails from local storage');
+      // Since /api/mail/deleted doesn't exist, use local storage
+      final prefs = await SharedPreferences.getInstance();
+      final deletedThreadIds = prefs.getStringList('deleted_threads') ?? [];
+
+      if (deletedThreadIds.isEmpty) {
+        return [];
+      }
+
+      // Get all threads and filter deleted ones
+      final allThreads = await getInbox(token, page: 1, limit: 1000);
+      final deletedIds =
+          deletedThreadIds
+              .map((id) => int.tryParse(id))
+              .where((id) => id != null)
+              .cast<int>()
+              .toSet();
+
+      return allThreads
+          .where((thread) => deletedIds.contains(thread.threadId))
+          .toList();
+    } catch (e) {
+      debugPrint('❌ Lỗi getDeletedEmails: $e');
+      rethrow;
+    }
+  }
+
+  /// Restore emails from spam (use existing spam-mail API to unmark)
+  static Future<void> restoreFromSpam({
+    required String token,
+    required List<int> threadIds,
+  }) async {
+    try {
+      debugPrint('🔄 Restore from spam: threadIds=$threadIds');
+      // Since there's no restore API, we'll need to implement this differently
+      // For now, just throw an exception to indicate it's not implemented
+      throw Exception(
+        'Restore from spam API not available. Please contact support.',
+      );
+    } catch (e) {
+      debugPrint('❌ Lỗi restoreFromSpam: $e');
+      rethrow;
+    }
+  }
+
+  /// Create group mail
+  static Future<ApiResponse<int>> createGroup({
+    required String token,
+    required List<String> receiverEmails,
+    required String subject,
+  }) async {
+    try {
+      debugPrint('👥 Create group: emails=$receiverEmails, subject=$subject');
+
+      final uri = Uri.parse('$baseUrl/api/mail/creat-group').replace(
+        queryParameters: {'receiverEmail': receiverEmails, 'subject': subject},
+      );
+
+      final response = await http
+          .post(
+            uri,
+            headers: {
+              'Authorization': 'Bearer $token',
+              'Content-Type': 'application/json',
+            },
+          )
+          .timeout(const Duration(seconds: 15));
+
+      debugPrint(
+        '👥 Group response: ${response.statusCode} - ${response.body}',
+      );
+
+      if (response.statusCode == 200) {
+        final json = jsonDecode(response.body);
+        return ApiResponse.fromJson(json, (data) => data as int);
+      } else if (response.statusCode == 403 || response.statusCode == 401) {
+        final newToken = await AuthService.refreshTokenIfNeeded(token);
+        if (newToken != null) {
+          return await createGroup(
+            token: newToken,
+            receiverEmails: receiverEmails,
+            subject: subject,
+          );
+        } else {
+          throw Exception('Session expired, please log in again');
+        }
+      } else {
+        throw Exception('Create group failed: ${response.body}');
+      }
+    } catch (e) {
+      debugPrint('❌ Lỗi createGroup: $e');
       rethrow;
     }
   }
