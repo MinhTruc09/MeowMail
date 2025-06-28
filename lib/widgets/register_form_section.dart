@@ -203,8 +203,8 @@ class _RegisterFormSectionState extends State<RegisterFormSection> {
                           icon: const Icon(Icons.image),
                           label: const Text('Chọn ảnh đại diện'),
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.black,
-                            foregroundColor: Colors.white,
+                            backgroundColor: AppTheme.primaryBlack,
+                            foregroundColor: AppTheme.primaryWhite,
                           ),
                         ),
                       ],

@@ -4,7 +4,7 @@ import 'package:mewmail/models/mail/inbox_thread.dart';
 import 'package:mewmail/services/mail_service.dart';
 import 'package:mewmail/widgets/mail_list_tile.dart';
 import 'package:mewmail/widgets/theme.dart';
-import 'package:mewmail/screens/chat_detail_screen.dart';
+import 'package:mewmail/screens/gmail_detail_screen.dart';
 
 class HistoryScreen extends StatefulWidget {
   const HistoryScreen({super.key});
@@ -64,18 +64,22 @@ class _HistoryScreenState extends State<HistoryScreen>
       List<InboxThread> deletedThreads = [];
 
       // Get spam emails (now uses fallback automatically)
+      debugPrint('📡 Loading spam emails...');
       spamThreads = await MailService.getSpamEmails(
         token,
         page: 1,
         limit: 1000,
       );
+      debugPrint('✅ Loaded ${spamThreads.length} spam emails');
 
       // Get deleted emails (now uses local storage automatically)
+      debugPrint('📡 Loading deleted emails...');
       deletedThreads = await MailService.getDeletedEmails(
         token,
         page: 1,
         limit: 1000,
       );
+      debugPrint('✅ Loaded ${deletedThreads.length} deleted emails');
 
       // No need for fallback anymore since the methods handle it internally
 
@@ -115,14 +119,17 @@ class _HistoryScreenState extends State<HistoryScreen>
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Tính năng khôi phục từ spam chưa được hỗ trợ'),
-            backgroundColor: Colors.orange,
+            backgroundColor: AppTheme.primaryYellow,
           ),
         );
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Lỗi: $e'), backgroundColor: Colors.red),
+          SnackBar(
+            content: Text('Lỗi: $e'),
+            backgroundColor: AppTheme.primaryBlack,
+          ),
         );
       }
     }
@@ -146,7 +153,7 @@ class _HistoryScreenState extends State<HistoryScreen>
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Đã khôi phục email từ thùng rác'),
-            backgroundColor: Colors.green,
+            backgroundColor: AppTheme.primaryYellow,
           ),
         );
       }
@@ -180,14 +187,17 @@ class _HistoryScreenState extends State<HistoryScreen>
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Đã xóa vĩnh viễn'),
-            backgroundColor: Colors.red,
+            backgroundColor: AppTheme.primaryBlack,
           ),
         );
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Lỗi: $e'), backgroundColor: Colors.red),
+          SnackBar(
+            content: Text('Lỗi: $e'),
+            backgroundColor: AppTheme.primaryBlack,
+          ),
         );
       }
     }
@@ -214,7 +224,7 @@ class _HistoryScreenState extends State<HistoryScreen>
           controller: _tabController,
           indicatorColor: AppTheme.primaryYellow,
           labelColor: AppTheme.primaryYellow,
-          unselectedLabelColor: Colors.grey[400],
+          unselectedLabelColor: AppTheme.primaryBlack.withValues(alpha: 0.4),
           tabs: const [
             Tab(icon: Icon(Icons.report), text: 'Spam'),
             Tab(icon: Icon(Icons.delete), text: 'Đã xóa'),
@@ -231,11 +241,19 @@ class _HistoryScreenState extends State<HistoryScreen>
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Icon(Icons.error_outline, size: 64, color: Colors.red[400]),
+                    const Icon(
+                      Icons.error_outline,
+                      size: 64,
+                      color: AppTheme.primaryBlack,
+                    ),
                     const SizedBox(height: 16),
                     Text(
                       _error!,
-                      style: TextStyle(color: Colors.red[600], fontSize: 16),
+                      style: const TextStyle(
+                        color: AppTheme.primaryBlack,
+                        fontSize: 16,
+                        fontFamily: 'Borel',
+                      ),
                       textAlign: TextAlign.center,
                     ),
                     const SizedBox(height: 16),
@@ -289,12 +307,16 @@ class _HistoryScreenState extends State<HistoryScreen>
             Icon(
               isSpamTab ? Icons.report_off : Icons.delete_outline,
               size: 64,
-              color: Colors.grey[400],
+              color: AppTheme.primaryBlack.withValues(alpha: 0.4),
             ),
             const SizedBox(height: 16),
             Text(
               emptyMessage,
-              style: TextStyle(color: Colors.grey[600], fontSize: 16),
+              style: TextStyle(
+                color: AppTheme.primaryBlack.withValues(alpha: 0.6),
+                fontSize: 16,
+                fontFamily: 'Borel',
+              ),
             ),
           ],
         ),
@@ -315,7 +337,7 @@ class _HistoryScreenState extends State<HistoryScreen>
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (_) => ChatDetailScreen(threadId: thread.threadId),
+                  builder: (_) => GmailDetailScreen(threadId: thread.threadId),
                 ),
               );
             }

@@ -1,24 +1,33 @@
-class ProfileResponseDto {
+class UserProfile {
   final String email;
   final String fullname;
   final String phone;
   final String avatar;
 
-  ProfileResponseDto({
+  UserProfile({
     required this.email,
     required this.fullname,
     required this.phone,
     required this.avatar,
   });
 
-  factory ProfileResponseDto.fromJson(Map<String, dynamic> json) {
+  factory UserProfile.fromJson(Map<String, dynamic> json) {
     // Handle server mapping bug - fields are swapped
-    return ProfileResponseDto(
+    return UserProfile(
       email: json['fullname'] ?? '', // Server puts email in fullname field
-      fullname: json['phone'] ?? '', // Server puts fullname in phone field
+      fullname: json['phone'] ?? '', // Server puts fullname in phone field  
       phone: json['avatar'] ?? '', // Server puts phone in avatar field
       avatar: json['email'] ?? '', // Server puts avatar URL in email field
     );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'email': email,
+      'fullname': fullname,
+      'phone': phone,
+      'avatar': avatar,
+    };
   }
 
   // Helper method to get display name
@@ -32,12 +41,9 @@ class ProfileResponseDto {
       if (namePart.contains('.')) {
         return namePart
             .split('.')
-            .map(
-              (part) =>
-                  part.isNotEmpty
-                      ? part[0].toUpperCase() + part.substring(1).toLowerCase()
-                      : '',
-            )
+            .map((part) => part.isNotEmpty
+                ? part[0].toUpperCase() + part.substring(1).toLowerCase()
+                : '')
             .join(' ');
       }
       return namePart.isNotEmpty
@@ -59,7 +65,7 @@ class ProfileResponseDto {
 
   // Helper method to check if avatar URL is valid
   bool get hasValidAvatar {
-    return avatar.isNotEmpty &&
-        (avatar.startsWith('http://') || avatar.startsWith('https://'));
+    return avatar.isNotEmpty && 
+           (avatar.startsWith('http://') || avatar.startsWith('https://'));
   }
 }

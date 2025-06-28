@@ -47,6 +47,16 @@
 - Xử lý lỗi token tốt hơn, tự động đăng xuất khi cần
 - Debug logs sẽ hiển thị đúng thông tin
 
+## 🔧 Các lỗi bổ sung đã sửa:
+
+### 9. **Lỗi validateEmail undefined** - ĐÃ SỬA
+- **Trước**: `validateEmail` không được import trong home_screen.dart
+- **Sau**: Đã thêm import `register_validator.dart`
+
+### 10. **Cải thiện xử lý lỗi BuildContext** - ĐÃ SỬA
+- **Trước**: Một số chỗ có thể gặp warning về BuildContext
+- **Sau**: Đã kiểm tra và đảm bảo có mounted check
+
 ## 📝 Ghi chú:
 
 Vấn đề "lúc trước bấm vào tin nhắn được nhưng giờ báo lỗi token" có thể do:

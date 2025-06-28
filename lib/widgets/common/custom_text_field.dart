@@ -50,7 +50,10 @@ class CustomTextField extends StatelessWidget {
       readOnly: readOnly,
       style: TextStyle(
         fontFamily: 'Borel',
-        color: enabled ? AppTheme.primaryBlack : Colors.grey,
+        color:
+            enabled
+                ? AppTheme.primaryBlack
+                : AppTheme.primaryBlack.withValues(alpha: 0.5),
         fontSize: AppTheme.responsiveFontSize(context, AppTheme.bodyFontSize),
       ),
       decoration: InputDecoration(
@@ -58,7 +61,7 @@ class CustomTextField extends StatelessWidget {
         hintText: hintText,
         labelStyle: TextStyle(
           fontFamily: 'Borel',
-          color: Colors.grey,
+          color: AppTheme.primaryBlack.withValues(alpha: 0.6),
           fontSize: AppTheme.responsiveFontSize(
             context,
             AppTheme.labelFontSize,
@@ -66,14 +69,14 @@ class CustomTextField extends StatelessWidget {
         ),
         hintStyle: TextStyle(
           fontFamily: 'Borel',
-          color: Colors.grey.withValues(alpha: 0.7),
+          color: AppTheme.primaryBlack.withValues(alpha: 0.4),
           fontSize: AppTheme.responsiveFontSize(context, AppTheme.bodyFontSize),
         ),
         prefixIcon:
             prefixIcon != null
                 ? Icon(
                   prefixIcon,
-                  color: Colors.grey,
+                  color: AppTheme.primaryBlack.withValues(alpha: 0.6),
                   size: AppTheme.responsiveFontSize(context, AppTheme.iconSize),
                 )
                 : null,
@@ -82,13 +85,17 @@ class CustomTextField extends StatelessWidget {
           borderRadius: BorderRadius.circular(
             AppTheme.responsiveRadius(context, AppTheme.defaultRadius),
           ),
-          borderSide: const BorderSide(color: Colors.grey),
+          borderSide: BorderSide(
+            color: AppTheme.primaryBlack.withValues(alpha: 0.3),
+          ),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(
             AppTheme.responsiveRadius(context, AppTheme.defaultRadius),
           ),
-          borderSide: const BorderSide(color: Colors.grey),
+          borderSide: BorderSide(
+            color: AppTheme.primaryBlack.withValues(alpha: 0.3),
+          ),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(
@@ -100,25 +107,27 @@ class CustomTextField extends StatelessWidget {
           borderRadius: BorderRadius.circular(
             AppTheme.responsiveRadius(context, AppTheme.defaultRadius),
           ),
-          borderSide: const BorderSide(color: Colors.red),
+          borderSide: const BorderSide(color: AppTheme.primaryBlack),
         ),
         focusedErrorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(
             AppTheme.responsiveRadius(context, AppTheme.defaultRadius),
           ),
-          borderSide: const BorderSide(color: Colors.red, width: 2),
+          borderSide: const BorderSide(color: AppTheme.primaryBlack, width: 2),
         ),
         disabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(
             AppTheme.responsiveRadius(context, AppTheme.defaultRadius),
           ),
-          borderSide: BorderSide(color: Colors.grey.withValues(alpha: 0.3)),
+          borderSide: BorderSide(
+            color: AppTheme.primaryBlack.withValues(alpha: 0.2),
+          ),
         ),
         filled: true,
         fillColor:
             enabled
                 ? AppTheme.primaryWhite
-                : Colors.grey.withValues(alpha: 0.1),
+                : AppTheme.primaryBlack.withValues(alpha: 0.05),
         contentPadding: EdgeInsets.symmetric(
           horizontal: AppTheme.responsivePadding(
             context,
@@ -168,7 +177,7 @@ class _PasswordTextFieldState extends State<PasswordTextField> {
       suffixIcon: IconButton(
         icon: Icon(
           _obscureText ? Icons.visibility : Icons.visibility_off,
-          color: Colors.grey,
+          color: AppTheme.primaryBlack.withValues(alpha: 0.6),
           size: AppTheme.responsiveFontSize(context, AppTheme.iconSize),
         ),
         onPressed: () => setState(() => _obscureText = !_obscureText),

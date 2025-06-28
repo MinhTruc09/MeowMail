@@ -9,6 +9,7 @@ import 'package:mewmail/services/user_service.dart';
 import 'package:mewmail/services/ai_service.dart';
 import 'package:mewmail/widgets/register/register_validator.dart';
 import 'package:mewmail/widgets/theme.dart';
+import 'package:mewmail/widgets/ai_chat_widget.dart';
 
 class SendMailDialog extends StatefulWidget {
   final VoidCallback onSend;
@@ -203,21 +204,21 @@ class _SendMailDialogState extends State<SendMailDialog> {
         prompt: prompt,
       );
 
-      if (mounted && response.status == 200 && response.data != null) {
-        // Assuming the AI response has content field
-        final aiContent = response.data!.content ?? '';
-        if (aiContent.isNotEmpty) {
-          setState(() {
-            _contentController.text = aiContent;
-          });
+      if (mounted && response.content.isNotEmpty) {
+        setState(() {
+          _contentController.text = response.content;
+          // Also update subject if it's empty and AI provided one
+          if (_subjectController.text.isEmpty && response.subject.isNotEmpty) {
+            _subjectController.text = response.subject;
+          }
+        });
 
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('✨ Đã tạo nội dung email bằng AI'),
-              backgroundColor: Colors.green,
-            ),
-          );
-        }
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('✨ Đã tạo nội dung email bằng AI'),
+            backgroundColor: AppTheme.primaryYellow,
+          ),
+        );
       }
     } catch (e) {
       debugPrint('❌ Lỗi AI: $e');
@@ -318,6 +319,18 @@ class _SendMailDialogState extends State<SendMailDialog> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
+                      // AI Chat Widget
+                      AiChatWidget(
+                        onAiGenerated: (aiResponse) {
+                          setState(() {
+                            _receiverController.text = aiResponse.receiverEmail;
+                            _subjectController.text = aiResponse.subject;
+                            _contentController.text = aiResponse.content;
+                          });
+                        },
+                      ),
+                      const SizedBox(height: 16),
+
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
@@ -378,9 +391,13 @@ class _SendMailDialogState extends State<SendMailDialog> {
                             Container(
                               margin: const EdgeInsets.only(top: 4),
                               decoration: BoxDecoration(
-                                border: Border.all(color: Colors.grey.shade300),
+                                border: Border.all(
+                                  color: AppTheme.primaryBlack.withValues(
+                                    alpha: 0.3,
+                                  ),
+                                ),
                                 borderRadius: BorderRadius.circular(8),
-                                color: Colors.white,
+                                color: AppTheme.primaryWhite,
                               ),
                               constraints: const BoxConstraints(maxHeight: 150),
                               child: ListView.builder(
@@ -515,9 +532,11 @@ class _SendMailDialogState extends State<SendMailDialog> {
                       Container(
                         padding: const EdgeInsets.all(16),
                         decoration: BoxDecoration(
-                          color: Colors.grey[50],
+                          color: AppTheme.primaryYellow.withValues(alpha: 0.05),
                           borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: Colors.grey[300]!),
+                          border: Border.all(
+                            color: AppTheme.primaryBlack.withValues(alpha: 0.3),
+                          ),
                         ),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,

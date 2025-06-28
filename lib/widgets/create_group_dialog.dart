@@ -96,7 +96,7 @@ class _CreateGroupDialogState extends State<CreateGroupDialog> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Vui lòng nhập tiêu đề nhóm'),
-          backgroundColor: Colors.red,
+          backgroundColor: AppTheme.primaryBlack,
         ),
       );
       return;
@@ -106,7 +106,7 @@ class _CreateGroupDialogState extends State<CreateGroupDialog> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Vui lòng thêm ít nhất một email'),
-          backgroundColor: Colors.red,
+          backgroundColor: AppTheme.primaryBlack,
         ),
       );
       return;
@@ -135,7 +135,7 @@ class _CreateGroupDialogState extends State<CreateGroupDialog> {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Tạo nhóm email thành công!'),
-            backgroundColor: Colors.green,
+            backgroundColor: AppTheme.primaryYellow,
           ),
         );
         widget.onGroupCreated?.call();
@@ -145,7 +145,7 @@ class _CreateGroupDialogState extends State<CreateGroupDialog> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Lỗi tạo nhóm: $e'),
-            backgroundColor: Colors.red,
+            backgroundColor: AppTheme.primaryBlack,
           ),
         );
       }
@@ -245,7 +245,9 @@ class _CreateGroupDialogState extends State<CreateGroupDialog> {
               Container(
                 height: 120,
                 decoration: BoxDecoration(
-                  border: Border.all(color: Colors.grey[300]!),
+                  border: Border.all(
+                    color: AppTheme.primaryBlack.withValues(alpha: 0.3),
+                  ),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: ListView.builder(
@@ -288,10 +290,14 @@ class _CreateGroupDialogState extends State<CreateGroupDialog> {
             Expanded(
               child:
                   _selectedEmails.isEmpty
-                      ? const Center(
+                      ? Center(
                         child: Text(
                           'Chưa có thành viên nào',
-                          style: TextStyle(color: Colors.grey, fontSize: 14),
+                          style: TextStyle(
+                            color: AppTheme.primaryBlack.withValues(alpha: 0.6),
+                            fontSize: 14,
+                            fontFamily: 'Borel',
+                          ),
                         ),
                       )
                       : ListView.builder(
@@ -323,7 +329,7 @@ class _CreateGroupDialogState extends State<CreateGroupDialog> {
                               trailing: IconButton(
                                 icon: const Icon(
                                   Icons.remove_circle,
-                                  color: Colors.red,
+                                  color: AppTheme.primaryBlack,
                                   size: 20,
                                 ),
                                 onPressed: () => _removeEmail(email),

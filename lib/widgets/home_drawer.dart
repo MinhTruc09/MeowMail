@@ -7,35 +7,28 @@ class HomeDrawer extends StatelessWidget {
   final String? userEmail;
   final VoidCallback? onRefresh;
 
-  const HomeDrawer({
-    super.key,
-    this.userEmail,
-    this.onRefresh,
-  });
+  const HomeDrawer({super.key, this.userEmail, this.onRefresh});
 
   Future<void> _logout(BuildContext context) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.clear();
-    
+
     if (context.mounted) {
-      Navigator.pushNamedAndRemoveUntil(
-        context,
-        '/login',
-        (route) => false,
-      );
+      Navigator.pushNamedAndRemoveUntil(context, '/login', (route) => false);
     }
   }
 
   void _showSendMailDialog(BuildContext context) {
     showDialog(
       context: context,
-      builder: (context) => SendMailDialog(
-        onSend: () {
-          if (onRefresh != null) {
-            onRefresh!();
-          }
-        },
-      ),
+      builder:
+          (context) => SendMailDialog(
+            onSend: () {
+              if (onRefresh != null) {
+                onRefresh!();
+              }
+            },
+          ),
     );
   }
 
@@ -64,9 +57,7 @@ class HomeDrawer extends StatelessWidget {
               left: 20,
               right: 20,
             ),
-            decoration: const BoxDecoration(
-              color: AppTheme.primaryBlack,
-            ),
+            decoration: const BoxDecoration(color: AppTheme.primaryBlack),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -108,14 +99,14 @@ class HomeDrawer extends StatelessWidget {
               ],
             ),
           ),
-          
+
           // Menu items
           Expanded(
             child: ListView(
               padding: EdgeInsets.zero,
               children: [
                 const SizedBox(height: 10),
-                
+
                 // Soạn tin
                 ListTile(
                   leading: const Icon(
@@ -137,9 +128,9 @@ class HomeDrawer extends StatelessWidget {
                     _showSendMailDialog(context);
                   },
                 ),
-                
-                const Divider(color: Colors.grey),
-                
+
+                Divider(color: AppTheme.primaryBlack.withValues(alpha: 0.2)),
+
                 // Hộp thư đến
                 ListTile(
                   leading: const Icon(
@@ -161,7 +152,7 @@ class HomeDrawer extends StatelessWidget {
                     // Đã ở trang chủ rồi
                   },
                 ),
-                
+
                 // Lịch sử
                 ListTile(
                   leading: const Icon(
@@ -183,7 +174,7 @@ class HomeDrawer extends StatelessWidget {
                     Navigator.pushNamed(context, '/history');
                   },
                 ),
-                
+
                 // Cài đặt
                 ListTile(
                   leading: const Icon(
@@ -205,20 +196,20 @@ class HomeDrawer extends StatelessWidget {
                     Navigator.pushNamed(context, '/settings');
                   },
                 ),
-                
-                const Divider(color: Colors.grey),
-                
+
+                Divider(color: AppTheme.primaryBlack.withValues(alpha: 0.2)),
+
                 // Đăng xuất
                 ListTile(
                   leading: const Icon(
                     Icons.logout,
-                    color: Colors.red,
+                    color: AppTheme.primaryBlack,
                     size: 24,
                   ),
                   title: const Text(
                     'Đăng xuất',
                     style: TextStyle(
-                      color: Colors.red,
+                      color: AppTheme.primaryBlack,
                       fontSize: 16,
                       fontFamily: 'Borel',
                       fontWeight: FontWeight.w500,

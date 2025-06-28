@@ -77,7 +77,7 @@ class _LoginFormSectionState extends State<LoginFormSection> {
             vertical: screenHeight * 0.025,
           ),
           decoration: BoxDecoration(
-            color: const Color(0xFFFFCC00),
+            color: AppTheme.primaryYellow,
             borderRadius: BorderRadius.circular(20),
           ),
           child: Column(
@@ -114,7 +114,7 @@ class _LoginFormSectionState extends State<LoginFormSection> {
                   child: Text(
                     "Quên mật khẩu?",
                     style: theme.textTheme.labelLarge?.copyWith(
-                      color: Colors.black,
+                      color: AppTheme.primaryBlack,
                       fontWeight: FontWeight.w500,
                       decoration: TextDecoration.none,
                       fontSize: screenWidth * 0.035,

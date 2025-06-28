@@ -91,7 +91,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
               content: Text('Phiên đăng nhập hết hạn, vui lòng đăng nhập lại'),
-              backgroundColor: Colors.orange,
+              backgroundColor: AppTheme.primaryYellow,
             ),
           );
           Navigator.pushNamedAndRemoveUntil(
@@ -162,7 +162,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Cập nhật thông tin thành công!'),
-            backgroundColor: Colors.green,
+            backgroundColor: AppTheme.primaryYellow,
           ),
         );
         Navigator.pop(context, true); // Return true to indicate success
@@ -237,7 +237,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                   shape: BoxShape.circle,
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.2),
+                      color: AppTheme.primaryBlack.withValues(alpha: 0.2),
                       blurRadius: 4,
                       offset: const Offset(0, 2),
                     ),

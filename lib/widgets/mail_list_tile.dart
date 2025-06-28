@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:mewmail/models/mail/inbox_thread.dart';
 import 'package:mewmail/widgets/theme.dart';
+import 'package:mewmail/services/avatar_service.dart';
 
 class MailListTile extends StatelessWidget {
   final InboxThread thread;
@@ -113,22 +114,26 @@ class MailListTile extends StatelessWidget {
     // Generate avatar color based on display email
     final avatarColor =
         isMe
-            ? AppTheme.primaryBlack
-            : Colors.primaries[displayEmail.hashCode % Colors.primaries.length];
+            ? AppTheme.primaryYellow
+            : AvatarService.getAvatarColor(displayEmail);
 
     return Dismissible(
       key: Key('mail_${thread.threadId}'),
       background: Container(
-        color: Colors.green,
+        color: AppTheme.primaryYellow,
         alignment: Alignment.centerLeft,
         padding: const EdgeInsets.only(left: 20),
-        child: const Icon(Icons.mark_email_read, color: Colors.white, size: 24),
+        child: const Icon(
+          Icons.mark_email_read,
+          color: AppTheme.primaryBlack,
+          size: 24,
+        ),
       ),
       secondaryBackground: Container(
-        color: Colors.red,
+        color: AppTheme.primaryBlack,
         alignment: Alignment.centerRight,
         padding: const EdgeInsets.only(right: 20),
-        child: const Icon(Icons.delete, color: Colors.white, size: 24),
+        child: const Icon(Icons.delete, color: AppTheme.primaryWhite, size: 24),
       ),
       confirmDismiss: (direction) async {
         if (direction == DismissDirection.startToEnd) {
@@ -156,7 +161,10 @@ class MailListTile extends StatelessWidget {
                     ? AppTheme.primaryYellow.withValues(alpha: 0.1)
                     : AppTheme.primaryWhite,
             border: Border(
-              bottom: BorderSide(color: Colors.grey[200]!, width: 0.5),
+              bottom: BorderSide(
+                color: AppTheme.primaryBlack.withValues(alpha: 0.1),
+                width: 0.5,
+              ),
             ),
           ),
           child: Row(
@@ -169,9 +177,10 @@ class MailListTile extends StatelessWidget {
                 child: Text(
                   avatarText,
                   style: const TextStyle(
-                    color: Colors.white,
+                    color: AppTheme.primaryWhite,
                     fontWeight: FontWeight.w600,
                     fontSize: 18,
+                    fontFamily: 'Borel',
                   ),
                 ),
               ),
@@ -191,7 +200,8 @@ class MailListTile extends StatelessWidget {
                               fontWeight:
                                   isUnread ? FontWeight.w700 : FontWeight.w600,
                               fontSize: 18,
-                              color: Colors.black87,
+                              color: AppTheme.primaryBlack,
+                              fontFamily: 'Borel',
                             ),
                             overflow: TextOverflow.ellipsis,
                           ),
@@ -200,9 +210,10 @@ class MailListTile extends StatelessWidget {
                           timeStr,
                           style: TextStyle(
                             fontSize: 14,
-                            color: Colors.grey[600],
+                            color: AppTheme.primaryBlack.withValues(alpha: 0.6),
                             fontWeight:
                                 isUnread ? FontWeight.w600 : FontWeight.w500,
+                            fontFamily: 'Borel',
                           ),
                         ),
                       ],
@@ -215,7 +226,8 @@ class MailListTile extends StatelessWidget {
                         fontWeight:
                             isUnread ? FontWeight.w600 : FontWeight.w500,
                         fontSize: 16,
-                        color: Colors.black87,
+                        color: AppTheme.primaryBlack,
+                        fontFamily: 'Borel',
                       ),
                       overflow: TextOverflow.ellipsis,
                       maxLines: 1,
@@ -226,9 +238,10 @@ class MailListTile extends StatelessWidget {
                       thread.lastContent ?? '',
                       style: TextStyle(
                         fontSize: 15,
-                        color: Colors.grey[700],
+                        color: AppTheme.primaryBlack.withValues(alpha: 0.7),
                         fontWeight:
                             isUnread ? FontWeight.w500 : FontWeight.normal,
+                        fontFamily: 'Borel',
                       ),
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
@@ -240,7 +253,10 @@ class MailListTile extends StatelessWidget {
               // Star icon
               Icon(
                 isStarred ? Icons.star : Icons.star_border,
-                color: isStarred ? Colors.amber[600] : Colors.grey[400],
+                color:
+                    isStarred
+                        ? AppTheme.primaryYellow
+                        : AppTheme.primaryBlack.withValues(alpha: 0.4),
                 size: 20,
               ),
             ],

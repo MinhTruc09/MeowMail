@@ -103,8 +103,9 @@ class UserService {
       final uri = Uri.parse('$baseUrl/api/user/change-pass');
       final request = http.MultipartRequest('PATCH', uri);
       request.headers['Authorization'] = 'Bearer $token';
-      request.fields['oldPassword'] = oldPassword;
-      request.fields['newPassword'] = newPassword;
+      // Use Vietnamese field names as expected by API
+      request.fields['Mật khẩu cũ'] = oldPassword;
+      request.fields['Mật khẩu mới'] = newPassword;
       final streamedResponse = await request.send().timeout(
         const Duration(seconds: 10),
       );

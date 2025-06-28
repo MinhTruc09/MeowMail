@@ -28,10 +28,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Future<void> _loadProfile() async {
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('token');
+
     if (token == null) {
       Navigator.pushNamedAndRemoveUntil(context, '/login', (route) => false);
       return;
     }
+
     try {
       final res = await UserService.myProfile(token);
       if (mounted) {
@@ -69,6 +71,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ],
           ),
     );
+
     if (confirm == true) {
       await AuthService.logout();
       if (mounted) {
@@ -88,6 +91,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         body: LoadingWidget(message: 'Đang tải thông tin...'),
       );
     }
+
     if (profile == null) {
       return Scaffold(
         backgroundColor: AppTheme.primaryWhite,
@@ -128,6 +132,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               avatarUrl: profile!.avatar,
             ),
           ),
+
           Expanded(
             child: Container(
               padding: EdgeInsets.symmetric(
@@ -153,6 +158,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       }
                     },
                   ),
+
                   InfoCard(
                     title: 'Đổi mật khẩu',
                     icon: Icons.lock,
@@ -166,6 +172,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       );
                     },
                   ),
+
                   InfoCard(
                     title: 'Chuyển đổi tài khoản',
                     icon: Icons.switch_account,
@@ -174,6 +181,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       // TODO: Chuyển đổi tài khoản
                     },
                   ),
+
                   InfoCard(
                     title: 'Chế độ tối',
                     icon: Icons.dark_mode,
@@ -184,6 +192,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       },
                     ),
                   ),
+
                   InfoCard(
                     title: 'Tìm hiểu về chúng tôi',
                     icon: Icons.info_outline,
@@ -193,6 +202,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     ),
                     onTap: () => Navigator.pushNamed(context, '/about'),
                   ),
+
                   InfoCard(
                     title: 'Chính sách',
                     icon: Icons.policy,
@@ -202,6 +212,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     ),
                     onTap: () => Navigator.pushNamed(context, '/policy'),
                   ),
+
                   InfoCard(
                     title: 'Điều khoản dịch vụ',
                     icon: Icons.rule,
@@ -211,10 +222,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     ),
                     onTap: () => Navigator.pushNamed(context, '/terms'),
                   ),
+
                   InfoCard(
                     title: 'Đăng xuất',
                     icon: Icons.logout,
-                    backgroundColor: Colors.white,
+                    backgroundColor: AppTheme.primaryWhite,
                     onTap: _logout,
                   ),
                 ],

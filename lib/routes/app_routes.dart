@@ -4,12 +4,15 @@ import 'package:mewmail/screens/login_screen.dart';
 import 'package:mewmail/screens/main_screen.dart';
 import 'package:mewmail/screens/register_screen.dart';
 import 'package:mewmail/screens/splash_screen.dart';
-import 'package:mewmail/screens/chat_detail_screen.dart';
+import 'package:mewmail/screens/ai_demo_screen.dart';
+import 'package:mewmail/screens/settings_screen.dart';
+import 'package:mewmail/screens/history_screen.dart';
 import 'package:mewmail/screens/search_screen.dart';
+import 'package:mewmail/screens/edit_profile_screen.dart';
 import 'package:mewmail/screens/about_screen.dart';
 import 'package:mewmail/screens/policy_screen.dart';
 import 'package:mewmail/screens/terms_screen.dart';
-import 'package:mewmail/screens/edit_profile_screen.dart';
+import 'package:mewmail/screens/forgot_screen.dart';
 
 final Map<String, WidgetBuilder> appRoutes = {
   '/home': (context) => const HomeScreen(),
@@ -17,7 +20,15 @@ final Map<String, WidgetBuilder> appRoutes = {
   '/register': (context) => const RegisterScreen(),
   '/splash': (context) => const SplashScreen(),
   '/main': (context) => const MainScreen(),
+  '/ai-demo': (context) => const AiDemoScreen(),
+  '/settings': (context) => const SettingsScreen(),
+  '/history': (context) => const HistoryScreen(),
   '/search': (context) => const SearchScreen(),
+  '/edit_profile': (context) => const EditProfileScreen(),
+  '/about': (context) => const AboutScreen(),
+  '/policy': (context) => const PolicyScreen(),
+  '/terms': (context) => const TermsScreen(),
+  '/forgot': (context) => const ForgotScreen(),
 };
 
 Route<dynamic> onGenerateRoute(RouteSettings settings) {
@@ -39,12 +50,20 @@ Route<dynamic> onGenerateRoute(RouteSettings settings) {
     case '/main':
       page = const MainScreen();
       break;
+    case '/ai-demo':
+      page = const AiDemoScreen();
+      break;
+    case '/settings':
+      page = const SettingsScreen();
+      break;
+    case '/history':
+      page = const HistoryScreen();
+      break;
     case '/search':
       page = const SearchScreen();
       break;
-    case '/chat_detail':
-      final threadId = settings.arguments as int;
-      page = ChatDetailScreen(threadId: threadId);
+    case '/edit_profile':
+      page = const EditProfileScreen();
       break;
     case '/about':
       page = const AboutScreen();
@@ -55,8 +74,8 @@ Route<dynamic> onGenerateRoute(RouteSettings settings) {
     case '/terms':
       page = const TermsScreen();
       break;
-    case '/edit_profile':
-      page = const EditProfileScreen();
+    case '/forgot':
+      page = const ForgotScreen();
       break;
     default:
       page = const SplashScreen();

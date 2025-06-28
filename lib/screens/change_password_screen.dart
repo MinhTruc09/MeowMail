@@ -56,7 +56,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Đổi mật khẩu thành công!'),
-            backgroundColor: Colors.green,
+            backgroundColor: AppTheme.primaryYellow,
           ),
         );
         Navigator.pop(context);
@@ -70,7 +70,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
               content: Text('Phiên đăng nhập hết hạn, vui lòng đăng nhập lại'),
-              backgroundColor: Colors.orange,
+              backgroundColor: AppTheme.primaryYellow,
             ),
           );
           Navigator.pushNamedAndRemoveUntil(
@@ -82,7 +82,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text('Lỗi đổi mật khẩu: $e'),
-              backgroundColor: Colors.red,
+              backgroundColor: AppTheme.primaryBlack,
             ),
           );
         }
@@ -161,7 +161,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                         style: TextStyle(
                           fontSize: AppTheme.responsiveFontSize(context, 14),
                           fontFamily: 'Borel',
-                          color: Colors.grey,
+                          color: AppTheme.primaryBlack.withValues(alpha: 0.6),
                         ),
                         textAlign: TextAlign.center,
                       ),

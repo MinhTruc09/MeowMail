@@ -32,9 +32,10 @@ class CustomButton extends StatelessWidget {
       case ButtonType.secondary:
         return AppTheme.primaryYellow;
       case ButtonType.outline:
-        return Colors.transparent;
+        return AppTheme.primaryWhite;
       case ButtonType.danger:
-        return Colors.red;
+        return AppTheme
+            .primaryBlack; // Use black instead of red to follow theme
     }
   }
 
@@ -61,9 +62,10 @@ class CustomButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final buttonHeight = height ?? AppTheme.responsiveHeight(context, 0.06);
-    final buttonWidth = fullWidth 
-        ? double.infinity 
-        : width ?? AppTheme.responsiveWidth(context, 0.4);
+    final buttonWidth =
+        fullWidth
+            ? double.infinity
+            : width ?? AppTheme.responsiveWidth(context, 0.4);
 
     return SizedBox(
       width: buttonWidth,
@@ -81,40 +83,58 @@ class CustomButton extends StatelessWidget {
           ),
           elevation: type == ButtonType.outline ? 0 : 2,
           padding: EdgeInsets.symmetric(
-            horizontal: AppTheme.responsivePadding(context, AppTheme.defaultPadding),
-            vertical: AppTheme.responsivePadding(context, AppTheme.smallPadding),
+            horizontal: AppTheme.responsivePadding(
+              context,
+              AppTheme.defaultPadding,
+            ),
+            vertical: AppTheme.responsivePadding(
+              context,
+              AppTheme.smallPadding,
+            ),
           ),
         ),
-        child: isLoading
-            ? SizedBox(
-                height: AppTheme.responsiveFontSize(context, 20),
-                width: AppTheme.responsiveFontSize(context, 20),
-                child: CircularProgressIndicator(
-                  strokeWidth: 2,
-                  valueColor: AlwaysStoppedAnimation<Color>(_getTextColor()),
-                ),
-              )
-            : Row(
-                mainAxisSize: MainAxisSize.min,
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  if (icon != null) ...[
-                    Icon(
-                      icon,
-                      size: AppTheme.responsiveFontSize(context, AppTheme.iconSize),
-                    ),
-                    SizedBox(width: AppTheme.responsivePadding(context, AppTheme.smallPadding)),
-                  ],
-                  Text(
-                    text,
-                    style: TextStyle(
-                      fontSize: AppTheme.responsiveFontSize(context, AppTheme.bodyFontSize),
-                      fontWeight: FontWeight.bold,
-                      fontFamily: 'Borel',
-                    ),
+        child:
+            isLoading
+                ? SizedBox(
+                  height: AppTheme.responsiveFontSize(context, 20),
+                  width: AppTheme.responsiveFontSize(context, 20),
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    valueColor: AlwaysStoppedAnimation<Color>(_getTextColor()),
                   ),
-                ],
-              ),
+                )
+                : Row(
+                  mainAxisSize: MainAxisSize.min,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    if (icon != null) ...[
+                      Icon(
+                        icon,
+                        size: AppTheme.responsiveFontSize(
+                          context,
+                          AppTheme.iconSize,
+                        ),
+                      ),
+                      SizedBox(
+                        width: AppTheme.responsivePadding(
+                          context,
+                          AppTheme.smallPadding,
+                        ),
+                      ),
+                    ],
+                    Text(
+                      text,
+                      style: TextStyle(
+                        fontSize: AppTheme.responsiveFontSize(
+                          context,
+                          AppTheme.bodyFontSize,
+                        ),
+                        fontWeight: FontWeight.bold,
+                        fontFamily: 'Borel',
+                      ),
+                    ),
+                  ],
+                ),
       ),
     );
   }
@@ -141,7 +161,7 @@ class IconButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final buttonSize = size ?? AppTheme.responsiveWidth(context, 0.12);
-    
+
     return Tooltip(
       message: tooltip ?? '',
       child: GestureDetector(

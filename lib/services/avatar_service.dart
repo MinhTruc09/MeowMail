@@ -1,4 +1,6 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
 class AvatarService {
@@ -15,18 +17,46 @@ class AvatarService {
     try {
       final prefs = await SharedPreferences.getInstance();
       final token = prefs.getString('token');
+      final myEmail = prefs.getString('email');
 
-      if (token == null) return null;
+      if (token == null || myEmail == null) return null;
 
-      // For now, we'll use a placeholder since we don't have a specific
-      // endpoint to get user avatar by email. In a real app, you'd have
-      // an endpoint like /api/user/profile/{email} or /api/user/avatar/{email}
+      // Only load avatar for current user (since we only have my-profile endpoint)
+      if (email == myEmail) {
+        final response = await http
+            .get(
+              Uri.parse('$baseUrl/api/user/my-profile'),
+              headers: {
+                'Authorization': 'Bearer $token',
+                'Content-Type': 'application/json',
+              },
+            )
+            .timeout(const Duration(seconds: 10));
 
-      // Cache the result (null for now)
+        if (response.statusCode == 200) {
+          final json = jsonDecode(response.body);
+          if (json['data'] != null) {
+            // Handle server mapping bug - avatar URL is in 'email' field
+            final avatarUrl = json['data']['email'] as String?;
+
+            // Validate avatar URL
+            if (avatarUrl != null &&
+                avatarUrl.isNotEmpty &&
+                (avatarUrl.startsWith('http://') ||
+                    avatarUrl.startsWith('https://'))) {
+              _avatarCache[email] = avatarUrl;
+              return avatarUrl;
+            }
+          }
+        }
+      }
+
+      // Cache null result for other users or failed requests
       _avatarCache[email] = null;
       return null;
     } catch (e) {
       debugPrint('Error getting user avatar: $e');
+      _avatarCache[email] = null;
       return null;
     }
   }

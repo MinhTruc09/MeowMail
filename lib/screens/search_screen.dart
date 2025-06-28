@@ -3,7 +3,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:mewmail/services/mail_service.dart';
 import 'package:mewmail/models/mail/inbox_thread.dart';
 import 'package:mewmail/widgets/mail_list_tile.dart';
-import 'package:mewmail/screens/chat_detail_screen.dart';
+import 'package:mewmail/screens/gmail_detail_screen.dart';
 import 'package:mewmail/widgets/theme.dart';
 
 class SearchScreen extends StatefulWidget {
@@ -154,7 +154,9 @@ class _SearchScreenState extends State<SearchScreen> {
                         : null,
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(8),
-                  borderSide: BorderSide(color: Colors.grey[300]!),
+                  borderSide: BorderSide(
+                    color: AppTheme.primaryBlack.withValues(alpha: 0.3),
+                  ),
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(8),
@@ -188,17 +190,18 @@ class _SearchScreenState extends State<SearchScreen> {
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Icon(
+                          const Icon(
                             Icons.error_outline,
                             size: 64,
-                            color: Colors.red[400],
+                            color: AppTheme.primaryBlack,
                           ),
                           const SizedBox(height: 16),
                           Text(
                             _error!,
-                            style: TextStyle(
-                              color: Colors.red[600],
+                            style: const TextStyle(
+                              color: AppTheme.primaryBlack,
                               fontSize: 16,
+                              fontFamily: 'Borel',
                             ),
                             textAlign: TextAlign.center,
                           ),
@@ -219,15 +222,22 @@ class _SearchScreenState extends State<SearchScreen> {
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Icon(Icons.search, size: 64, color: Colors.grey[400]),
+                          Icon(
+                            Icons.search,
+                            size: 64,
+                            color: AppTheme.primaryBlack.withValues(alpha: 0.4),
+                          ),
                           const SizedBox(height: 16),
                           Text(
                             _searchController.text.isEmpty
                                 ? 'Nhập từ khóa để bắt đầu tìm kiếm email'
                                 : 'Không tìm thấy email nào phù hợp',
                             style: TextStyle(
-                              color: Colors.grey[600],
+                              color: AppTheme.primaryBlack.withValues(
+                                alpha: 0.6,
+                              ),
                               fontSize: 16,
+                              fontFamily: 'Borel',
                             ),
                             textAlign: TextAlign.center,
                           ),
@@ -249,7 +259,7 @@ class _SearchScreenState extends State<SearchScreen> {
                                 context,
                                 MaterialPageRoute(
                                   builder:
-                                      (_) => ChatDetailScreen(
+                                      (_) => GmailDetailScreen(
                                         threadId: thread.threadId,
                                       ),
                                 ),

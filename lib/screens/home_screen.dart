@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:mewmail/services/mail_service.dart';
+import 'package:mewmail/services/auth_service.dart';
 import 'package:mewmail/services/avatar_service.dart';
 import 'package:mewmail/models/mail/inbox_thread.dart';
-import 'package:mewmail/screens/chat_detail_screen.dart';
+import 'package:mewmail/screens/gmail_detail_screen.dart';
 import 'package:mewmail/widgets/mail_list_tile.dart';
 import 'package:mewmail/widgets/theme.dart';
 import 'package:mewmail/widgets/home_drawer.dart';
@@ -63,7 +64,6 @@ class _HomeScreenState extends State<HomeScreen> {
       future: AvatarService.getUserAvatar(myEmail!),
       builder: (context, snapshot) {
         final avatarUrl = snapshot.data;
-
         return CircleAvatar(
           radius: 16,
           backgroundColor: AvatarService.getAvatarColor(myEmail!),
@@ -76,7 +76,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   ? Text(
                     AvatarService.getAvatarInitials(myEmail!),
                     style: const TextStyle(
-                      color: Colors.white,
+                      color: AppTheme.primaryWhite,
                       fontWeight: FontWeight.bold,
                       fontSize: 14,
                     ),
@@ -134,6 +134,7 @@ class _HomeScreenState extends State<HomeScreen> {
           threads
               .where((thread) => !deletedIds.contains(thread.threadId))
               .toList();
+
       debugPrint(
         '✅ Sau khi filter: ${filteredThreads.length} threads (đã loại bỏ ${threads.length - filteredThreads.length} threads đã xóa)',
       );
@@ -211,14 +212,17 @@ class _HomeScreenState extends State<HomeScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Đã đánh dấu tất cả email là đã đọc'),
-            backgroundColor: Colors.green,
+            backgroundColor: AppTheme.primaryYellow,
           ),
         );
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Lỗi: $e'), backgroundColor: Colors.red),
+          SnackBar(
+            content: Text('Lỗi: $e'),
+            backgroundColor: AppTheme.primaryBlack,
+          ),
         );
       }
     }
@@ -251,15 +255,28 @@ class _HomeScreenState extends State<HomeScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Đã đánh dấu email là đã đọc'),
-            backgroundColor: Colors.green,
+            backgroundColor: AppTheme.primaryYellow,
           ),
         );
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Lỗi: $e'), backgroundColor: Colors.red),
+          SnackBar(
+            content: Text('Lỗi: $e'),
+            backgroundColor: AppTheme.primaryBlack,
+          ),
         );
+
+        // If session expired, logout and redirect to login
+        if (AuthService.shouldRedirectToLogin(e.toString())) {
+          await AuthService.logout();
+          Navigator.pushNamedAndRemoveUntil(
+            context,
+            '/login',
+            (route) => false,
+          );
+        }
       }
     }
   }
@@ -272,6 +289,15 @@ class _HomeScreenState extends State<HomeScreen> {
 
       await MailService.spamMail(token: token, threadIds: threadIds);
 
+      // Store spam thread IDs locally for history tracking
+      final spamThreads = prefs.getStringList('spam_threads') ?? [];
+      for (int threadId in threadIds) {
+        if (!spamThreads.contains(threadId.toString())) {
+          spamThreads.add(threadId.toString());
+        }
+      }
+      await prefs.setStringList('spam_threads', spamThreads);
+
       // Refresh data
       await _loadData(force: true);
 
@@ -279,15 +305,28 @@ class _HomeScreenState extends State<HomeScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Đã đánh dấu email là spam'),
-            backgroundColor: Colors.orange,
+            backgroundColor: AppTheme.primaryYellow,
           ),
         );
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Lỗi: $e'), backgroundColor: Colors.red),
+          SnackBar(
+            content: Text('Lỗi: $e'),
+            backgroundColor: AppTheme.primaryBlack,
+          ),
         );
+
+        // If session expired, logout and redirect to login
+        if (AuthService.shouldRedirectToLogin(e.toString())) {
+          await AuthService.logout();
+          Navigator.pushNamedAndRemoveUntil(
+            context,
+            '/login',
+            (route) => false,
+          );
+        }
       }
     }
   }
@@ -298,9 +337,10 @@ class _HomeScreenState extends State<HomeScreen> {
       final token = prefs.getString('token');
       if (token == null) throw Exception('Vui lòng đăng nhập lại');
 
+      // Try to delete via API first
       await MailService.deleteThreads(token: token, threadIds: threadIds);
 
-      // Store deleted thread IDs locally for history tracking
+      // Only store locally if API call succeeds
       final deletedThreads = prefs.getStringList('deleted_threads') ?? [];
       for (int threadId in threadIds) {
         if (!deletedThreads.contains(threadId.toString())) {
@@ -309,6 +349,10 @@ class _HomeScreenState extends State<HomeScreen> {
       }
       await prefs.setStringList('deleted_threads', deletedThreads);
 
+      debugPrint(
+        '✅ Đã lưu ${threadIds.length} deleted threads vào local storage: $deletedThreads',
+      );
+
       // Refresh data
       await _loadData(force: true);
 
@@ -316,15 +360,28 @@ class _HomeScreenState extends State<HomeScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Đã xóa email'),
-            backgroundColor: Colors.red,
+            backgroundColor: AppTheme.primaryBlack,
           ),
         );
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Lỗi: $e'), backgroundColor: Colors.red),
+          SnackBar(
+            content: Text('Lỗi: $e'),
+            backgroundColor: AppTheme.primaryBlack,
+          ),
         );
+
+        // If session expired, logout and redirect to login
+        if (AuthService.shouldRedirectToLogin(e.toString())) {
+          await AuthService.logout();
+          Navigator.pushNamedAndRemoveUntil(
+            context,
+            '/login',
+            (route) => false,
+          );
+        }
       }
     }
   }
@@ -472,6 +529,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 ],
               ),
             ),
+
           // Email list
           Expanded(
             child:
@@ -481,7 +539,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     ? Center(
                       child: Text(
                         _error!,
-                        style: const TextStyle(color: Colors.red),
+                        style: const TextStyle(color: AppTheme.primaryBlack),
                       ),
                     )
                     : RefreshIndicator(
@@ -504,7 +562,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                           context,
                                           MaterialPageRoute(
                                             builder:
-                                                (_) => ChatDetailScreen(
+                                                (_) => GmailDetailScreen(
                                                   threadId: thread.threadId,
                                                 ),
                                           ),
@@ -536,8 +594,8 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: _showSendMailDialog,
-        backgroundColor: Colors.yellow[700],
-        foregroundColor: Colors.black,
+        backgroundColor: AppTheme.primaryYellow,
+        foregroundColor: AppTheme.primaryBlack,
         child: const Icon(Icons.create),
       ),
     );

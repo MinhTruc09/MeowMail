@@ -66,7 +66,7 @@ class _ForgotScreenState extends State<ForgotScreen> {
   Widget build(BuildContext context) {
     final width = AppTheme.screenWidth(context);
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: AppTheme.primaryWhite,
       body: SafeArea(
         child: SingleChildScrollView(
           child: Column(

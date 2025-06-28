@@ -4,8 +4,6 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:mewmail/models/mail/inbox_thread.dart';
 import 'package:mewmail/models/mail/mail_detail.dart';
-import 'package:mewmail/models/mail/mail_status_request.dart';
-import 'package:mewmail/models/mail/api_response.dart';
 import 'package:mewmail/services/auth_service.dart';
 
 class MailService {
@@ -224,167 +222,69 @@ class MailService {
     }
   }
 
-  /// Mark emails as spam
-  static Future<ApiResponse<InboxThread>> spamMail({
-    required String token,
-    required List<int> threadIds,
-  }) async {
-    try {
-      debugPrint('🚫 Spam mail: threadIds=$threadIds');
-
-      final request = MailStatusRequestDto(threadId: threadIds);
-      final response = await http
-          .post(
-            Uri.parse('$baseUrl/api/mail/spam-mail'),
-            headers: {
-              'Authorization': 'Bearer $token',
-              'Content-Type': 'application/json',
-            },
-            body: jsonEncode(request.toJson()),
-          )
-          .timeout(const Duration(seconds: 15));
-
-      debugPrint('🚫 Spam response: ${response.statusCode} - ${response.body}');
-
-      if (response.statusCode == 200) {
-        final json = jsonDecode(response.body);
-        return ApiResponse.fromJson(json, (data) => InboxThread.fromJson(data));
-      } else if (response.statusCode == 403 || response.statusCode == 401) {
-        final newToken = await AuthService.refreshTokenIfNeeded(token);
-        if (newToken != null) {
-          return await spamMail(token: newToken, threadIds: threadIds);
-        } else {
-          throw Exception('Session expired, please log in again');
-        }
-      } else {
-        throw Exception('Spam mail failed: ${response.body}');
-      }
-    } catch (e) {
-      debugPrint('❌ Lỗi spamMail: $e');
-      rethrow;
-    }
-  }
-
-  /// Mark emails as read
-  static Future<ApiResponse<InboxThread>> readMail({
-    required String token,
-    required List<int> threadIds,
-  }) async {
-    try {
-      debugPrint('👁️ Read mail: threadIds=$threadIds');
-
-      final request = MailStatusRequestDto(threadId: threadIds);
-      final response = await http
-          .post(
-            Uri.parse('$baseUrl/api/mail/read-mail'),
-            headers: {
-              'Authorization': 'Bearer $token',
-              'Content-Type': 'application/json',
-            },
-            body: jsonEncode(request.toJson()),
-          )
-          .timeout(const Duration(seconds: 15));
-
-      debugPrint(
-        '👁️ Read response: ${response.statusCode} - ${response.body}',
-      );
-
-      if (response.statusCode == 200) {
-        final json = jsonDecode(response.body);
-        return ApiResponse.fromJson(json, (data) => InboxThread.fromJson(data));
-      } else if (response.statusCode == 403 || response.statusCode == 401) {
-        final newToken = await AuthService.refreshTokenIfNeeded(token);
-        if (newToken != null) {
-          return await readMail(token: newToken, threadIds: threadIds);
-        } else {
-          throw Exception('Session expired, please log in again');
-        }
-      } else {
-        throw Exception('Read mail failed: ${response.body}');
-      }
-    } catch (e) {
-      debugPrint('❌ Lỗi readMail: $e');
-      rethrow;
-    }
-  }
-
-  /// Delete email threads
-  static Future<ApiResponse> deleteThreads({
-    required String token,
-    required List<int> threadIds,
-  }) async {
-    try {
-      debugPrint('🗑️ Delete threads: threadIds=$threadIds');
-
-      final response = await http
-          .post(
-            Uri.parse('$baseUrl/api/mail/delete-threads'),
-            headers: {
-              'Authorization': 'Bearer $token',
-              'Content-Type': 'application/json',
-            },
-            body: jsonEncode(threadIds),
-          )
-          .timeout(const Duration(seconds: 15));
-
-      debugPrint(
-        '🗑️ Delete response: ${response.statusCode} - ${response.body}',
-      );
-
-      if (response.statusCode == 200) {
-        final json = jsonDecode(response.body);
-        return ApiResponse.fromJson(json, (data) => data);
-      } else if (response.statusCode == 403 || response.statusCode == 401) {
-        final newToken = await AuthService.refreshTokenIfNeeded(token);
-        if (newToken != null) {
-          return await deleteThreads(token: newToken, threadIds: threadIds);
-        } else {
-          throw Exception('Session expired, please log in again');
-        }
-      } else {
-        throw Exception('Delete threads failed: ${response.body}');
-      }
-    } catch (e) {
-      debugPrint('❌ Lỗi deleteThreads: $e');
-      rethrow;
-    }
-  }
-
-  /// Get spam emails (fallback to filtering from inbox since API endpoint doesn't exist)
   static Future<List<InboxThread>> getSpamEmails(
     String token, {
     int page = 1,
     int limit = 10,
   }) async {
     try {
-      debugPrint('📡 Getting spam emails from inbox (fallback)');
-      // Since /api/mail/spam doesn't exist, get from inbox and filter
-      final allThreads = await getInbox(token, page: page, limit: limit);
-      return allThreads.where((thread) => thread.spam == true).toList();
+      debugPrint('📡 Lấy spam emails từ local storage');
+
+      // Get spam thread IDs from local storage
+      final prefs = await SharedPreferences.getInstance();
+      final spamThreadIds = prefs.getStringList('spam_threads') ?? [];
+
+      if (spamThreadIds.isEmpty) {
+        debugPrint('⚠️ Không có spam threads trong local storage');
+        return [];
+      }
+
+      // Get all inbox threads to find the spam ones
+      final allThreads = await getInbox(token, page: 1, limit: 1000);
+
+      // Convert string IDs to int
+      final spamIds =
+          spamThreadIds
+              .map((id) => int.tryParse(id))
+              .where((id) => id != null)
+              .cast<int>()
+              .toSet();
+
+      // Filter threads that are in spam list
+      final spamThreads =
+          allThreads
+              .where((thread) => spamIds.contains(thread.threadId))
+              .toList();
+
+      debugPrint('✅ Tìm thấy ${spamThreads.length} spam emails');
+      return spamThreads;
     } catch (e) {
       debugPrint('❌ Lỗi getSpamEmails: $e');
-      rethrow;
+      return [];
     }
   }
 
-  /// Get deleted emails (use local storage since API endpoint doesn't exist)
   static Future<List<InboxThread>> getDeletedEmails(
     String token, {
     int page = 1,
     int limit = 10,
   }) async {
     try {
-      debugPrint('📡 Getting deleted emails from local storage');
-      // Since /api/mail/deleted doesn't exist, use local storage
+      debugPrint('📡 Lấy deleted emails từ local storage');
+
+      // Get deleted thread IDs from local storage
       final prefs = await SharedPreferences.getInstance();
       final deletedThreadIds = prefs.getStringList('deleted_threads') ?? [];
 
       if (deletedThreadIds.isEmpty) {
+        debugPrint('⚠️ Không có deleted threads trong local storage');
         return [];
       }
 
-      // Get all threads and filter deleted ones
+      // Get all inbox threads to find the deleted ones
       final allThreads = await getInbox(token, page: 1, limit: 1000);
+
+      // Convert string IDs to int
       final deletedIds =
           deletedThreadIds
               .map((id) => int.tryParse(id))
@@ -392,64 +292,90 @@ class MailService {
               .cast<int>()
               .toSet();
 
-      return allThreads
-          .where((thread) => deletedIds.contains(thread.threadId))
-          .toList();
+      // Filter threads that are in deleted list
+      final deletedThreads =
+          allThreads
+              .where((thread) => deletedIds.contains(thread.threadId))
+              .toList();
+
+      debugPrint('✅ Tìm thấy ${deletedThreads.length} deleted emails');
+      return deletedThreads;
     } catch (e) {
       debugPrint('❌ Lỗi getDeletedEmails: $e');
-      rethrow;
+      // Fallback: return empty list on error
+      return [];
     }
   }
 
-  /// Restore emails from spam (use existing spam-mail API to unmark)
-  static Future<void> restoreFromSpam({
+  static Future<void> deleteThreads({
     required String token,
     required List<int> threadIds,
   }) async {
     try {
-      debugPrint('🔄 Restore from spam: threadIds=$threadIds');
-      // Since there's no restore API, we'll need to implement this differently
-      // For now, just throw an exception to indicate it's not implemented
-      throw Exception(
-        'Restore from spam API not available. Please contact support.',
+      debugPrint('🗑️ Gửi yêu cầu deleteThreads: threadIds=$threadIds');
+      debugPrint('🔑 Token: ${token.substring(0, 20)}...');
+      final response = await http
+          .post(
+            Uri.parse('$baseUrl/api/mail/delete-threads'),
+            headers: {
+              'Authorization': 'Bearer $token',
+              'Content-Type': 'application/json',
+            },
+            body: jsonEncode(threadIds), // Send as array directly
+          )
+          .timeout(const Duration(seconds: 15));
+      debugPrint(
+        '📬 Phản hồi deleteThreads: ${response.statusCode} - ${response.body}',
       );
+
+      if (response.statusCode == 200) {
+        debugPrint('✅ Xóa threads thành công');
+      } else if (response.statusCode == 403 || response.statusCode == 401) {
+        debugPrint('❌ Lỗi xác thực: ${response.statusCode} - ${response.body}');
+        // Don't try to refresh token, just logout immediately
+        throw Exception('Session expired, please log in again');
+      } else {
+        debugPrint(
+          '❌ Lỗi deleteThreads: ${response.statusCode} - ${response.body}',
+        );
+        throw Exception('Lỗi xóa threads: ${response.body}');
+      }
     } catch (e) {
-      debugPrint('❌ Lỗi restoreFromSpam: $e');
+      debugPrint('❌ Lỗi deleteThreads: $e');
       rethrow;
     }
   }
 
-  /// Create group mail
-  static Future<ApiResponse<int>> createGroup({
+  static Future<void> createGroup({
     required String token,
     required List<String> receiverEmails,
     required String subject,
   }) async {
     try {
-      debugPrint('👥 Create group: emails=$receiverEmails, subject=$subject');
-
-      final uri = Uri.parse('$baseUrl/api/mail/creat-group').replace(
-        queryParameters: {'receiverEmail': receiverEmails, 'subject': subject},
+      debugPrint(
+        '👥 Gửi yêu cầu createGroup: emails=$receiverEmails, subject=$subject',
       );
-
       final response = await http
           .post(
-            uri,
+            Uri.parse('$baseUrl/api/mail/group'),
             headers: {
               'Authorization': 'Bearer $token',
               'Content-Type': 'application/json',
             },
+            body: jsonEncode({
+              'receiverEmails': receiverEmails,
+              'subject': subject,
+            }),
           )
           .timeout(const Duration(seconds: 15));
-
       debugPrint(
-        '👥 Group response: ${response.statusCode} - ${response.body}',
+        '📬 Phản hồi createGroup: ${response.statusCode} - ${response.body}',
       );
 
       if (response.statusCode == 200) {
-        final json = jsonDecode(response.body);
-        return ApiResponse.fromJson(json, (data) => data as int);
+        debugPrint('✅ Tạo group thành công');
       } else if (response.statusCode == 403 || response.statusCode == 401) {
+        debugPrint('❌ Lỗi xác thực: ${response.statusCode} - ${response.body}');
         final newToken = await AuthService.refreshTokenIfNeeded(token);
         if (newToken != null) {
           return await createGroup(
@@ -461,10 +387,87 @@ class MailService {
           throw Exception('Session expired, please log in again');
         }
       } else {
-        throw Exception('Create group failed: ${response.body}');
+        debugPrint(
+          '❌ Lỗi createGroup: ${response.statusCode} - ${response.body}',
+        );
+        throw Exception('Lỗi tạo group: ${response.body}');
       }
     } catch (e) {
       debugPrint('❌ Lỗi createGroup: $e');
+      rethrow;
+    }
+  }
+
+  static Future<void> readMail({
+    required String token,
+    required List<int> threadIds,
+  }) async {
+    try {
+      debugPrint('📖 Gửi yêu cầu readMail: threadIds=$threadIds');
+      final response = await http
+          .patch(
+            Uri.parse('$baseUrl/api/mail/read'),
+            headers: {
+              'Authorization': 'Bearer $token',
+              'Content-Type': 'application/json',
+            },
+            body: jsonEncode({'threadIds': threadIds}),
+          )
+          .timeout(const Duration(seconds: 15));
+      debugPrint(
+        '📬 Phản hồi readMail: ${response.statusCode} - ${response.body}',
+      );
+
+      if (response.statusCode == 200) {
+        debugPrint('✅ Đánh dấu đã đọc thành công');
+      } else if (response.statusCode == 403 || response.statusCode == 401) {
+        debugPrint('❌ Lỗi xác thực: ${response.statusCode} - ${response.body}');
+        // Don't try to refresh token, just logout immediately
+        throw Exception('Session expired, please log in again');
+      } else {
+        debugPrint('❌ Lỗi readMail: ${response.statusCode} - ${response.body}');
+        throw Exception('Lỗi đánh dấu đã đọc: ${response.body}');
+      }
+    } catch (e) {
+      debugPrint('❌ Lỗi readMail: $e');
+      rethrow;
+    }
+  }
+
+  static Future<void> spamMail({
+    required String token,
+    required List<int> threadIds,
+  }) async {
+    try {
+      debugPrint('🚫 Gửi yêu cầu spamMail: threadIds=$threadIds');
+      final response = await http
+          .post(
+            Uri.parse('$baseUrl/api/mail/spam-mail'),
+            headers: {
+              'Authorization': 'Bearer $token',
+              'Content-Type': 'application/json',
+            },
+            body: jsonEncode({
+              'threadId': threadIds,
+            }), // Use 'threadId' key as per API
+          )
+          .timeout(const Duration(seconds: 15));
+      debugPrint(
+        '📬 Phản hồi spamMail: ${response.statusCode} - ${response.body}',
+      );
+
+      if (response.statusCode == 200) {
+        debugPrint('✅ Đánh dấu spam thành công');
+      } else if (response.statusCode == 403 || response.statusCode == 401) {
+        debugPrint('❌ Lỗi xác thực: ${response.statusCode} - ${response.body}');
+        // Don't try to refresh token, just logout immediately
+        throw Exception('Session expired, please log in again');
+      } else {
+        debugPrint('❌ Lỗi spamMail: ${response.statusCode} - ${response.body}');
+        throw Exception('Lỗi đánh dấu spam: ${response.body}');
+      }
+    } catch (e) {
+      debugPrint('❌ Lỗi spamMail: $e');
       rethrow;
     }
   }

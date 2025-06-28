@@ -7,15 +7,15 @@ import 'package:intl/intl.dart';
 import 'package:mewmail/widgets/theme.dart';
 import 'package:html/parser.dart' as html_parser;
 
-class ChatDetailScreen extends StatefulWidget {
+class GmailDetailScreen extends StatefulWidget {
   final int threadId;
-  const ChatDetailScreen({super.key, required this.threadId});
+  const GmailDetailScreen({super.key, required this.threadId});
 
   @override
-  State<ChatDetailScreen> createState() => _ChatDetailScreenState();
+  State<GmailDetailScreen> createState() => _GmailDetailScreenState();
 }
 
-class _ChatDetailScreenState extends State<ChatDetailScreen> {
+class _GmailDetailScreenState extends State<GmailDetailScreen> {
   List<MailItem> mails = [];
   bool isLoading = true;
   String? error;
@@ -27,46 +27,6 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
   void initState() {
     super.initState();
     _loadUserAndThread();
-  }
-
-  /// Parse HTML content to plain text
-  String _parseHtmlContent(String htmlContent) {
-    try {
-      final document = html_parser.parse(htmlContent);
-      return document.body?.text ?? htmlContent;
-    } catch (e) {
-      debugPrint('Error parsing HTML: $e');
-      return htmlContent;
-    }
-  }
-
-  /// Build avatar widget with user image or fallback to initials
-  Widget _buildAvatar(String email, Color fallbackColor, String fallbackText) {
-    return FutureBuilder<String?>(
-      future: AvatarService.getUserAvatar(email),
-      builder: (context, snapshot) {
-        final avatarUrl = snapshot.data;
-
-        return CircleAvatar(
-          radius: 20,
-          backgroundColor: AvatarService.getAvatarColor(email),
-          backgroundImage:
-              avatarUrl != null && avatarUrl.isNotEmpty
-                  ? NetworkImage(avatarUrl)
-                  : null,
-          child:
-              avatarUrl == null || avatarUrl.isEmpty
-                  ? Text(
-                    AvatarService.getAvatarInitials(email),
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  )
-                  : null,
-        );
-      },
-    );
   }
 
   Future<void> _loadUserAndThread() async {
@@ -147,10 +107,43 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
     }
   }
 
-  @override
-  void dispose() {
-    _replyController.dispose();
-    super.dispose();
+  /// Parse HTML content to plain text
+  String _parseHtmlContent(String htmlContent) {
+    try {
+      final document = html_parser.parse(htmlContent);
+      return document.body?.text ?? htmlContent;
+    } catch (e) {
+      debugPrint('Error parsing HTML: $e');
+      return htmlContent;
+    }
+  }
+
+  /// Build avatar widget with user image or fallback to initials
+  Widget _buildAvatar(String email, Color fallbackColor, String fallbackText) {
+    return FutureBuilder<String?>(
+      future: AvatarService.getUserAvatar(email),
+      builder: (context, snapshot) {
+        final avatarUrl = snapshot.data;
+        return CircleAvatar(
+          radius: 20,
+          backgroundColor: AvatarService.getAvatarColor(email),
+          backgroundImage:
+              avatarUrl != null && avatarUrl.isNotEmpty
+                  ? NetworkImage(avatarUrl)
+                  : null,
+          child:
+              avatarUrl == null || avatarUrl.isEmpty
+                  ? Text(
+                    AvatarService.getAvatarInitials(email),
+                    style: const TextStyle(
+                      color: AppTheme.primaryWhite,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  )
+                  : null,
+        );
+      },
+    );
   }
 
   String _getDisplayName(String? email, String? name) {
@@ -169,7 +162,6 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
     if (email.contains('@')) {
       final parts = email.split('@');
       final namePart = parts[0];
-
       // Convert common patterns like "john.doe" to "John Doe"
       if (namePart.contains('.')) {
         return namePart
@@ -182,7 +174,6 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
             )
             .join(' ');
       }
-
       // Capitalize first letter
       return namePart.isNotEmpty
           ? namePart[0].toUpperCase() + namePart.substring(1).toLowerCase()
@@ -192,6 +183,12 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
     // If it's not an email format, return Unknown
     debugPrint('⚠️ Invalid email format: $email');
     return 'Unknown';
+  }
+
+  @override
+  void dispose() {
+    _replyController.dispose();
+    super.dispose();
   }
 
   @override
@@ -236,10 +233,30 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
       ),
       body:
           isLoading
-              ? const Center(child: CircularProgressIndicator())
+              ? const Center(
+                child: CircularProgressIndicator(color: AppTheme.primaryYellow),
+              )
               : error != null
               ? Center(
-                child: Text(error!, style: const TextStyle(color: Colors.red)),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(
+                      Icons.error_outline,
+                      size: 64,
+                      color: AppTheme.primaryBlack,
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      error!,
+                      style: const TextStyle(
+                        color: AppTheme.primaryBlack,
+                        fontSize: 16,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ],
+                ),
               )
               : Column(
                 children: [
@@ -264,18 +281,25 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
                                 : 'U';
                         final avatarColor =
                             isMe
-                                ? Colors.blue[600] ?? Colors.blue
-                                : Colors.primaries[mail.senderEmail.hashCode %
-                                    Colors.primaries.length];
+                                ? AppTheme.primaryYellow
+                                : AvatarService.getAvatarColor(
+                                  mail.senderEmail,
+                                );
 
                         return Container(
                           decoration: BoxDecoration(
-                            color: Colors.white,
+                            color: AppTheme.primaryWhite,
                             borderRadius: BorderRadius.circular(8),
-                            border: Border.all(color: Colors.grey[300]!),
+                            border: Border.all(
+                              color: AppTheme.primaryBlack.withValues(
+                                alpha: 0.1,
+                              ),
+                            ),
                             boxShadow: [
                               BoxShadow(
-                                color: Colors.black.withOpacity(0.05),
+                                color: AppTheme.primaryBlack.withValues(
+                                  alpha: 0.05,
+                                ),
                                 blurRadius: 4,
                                 offset: const Offset(0, 2),
                               ),
@@ -642,10 +666,9 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
                                       height: 20,
                                       child: CircularProgressIndicator(
                                         strokeWidth: 2,
-                                        valueColor:
-                                            AlwaysStoppedAnimation<Color>(
-                                              AppTheme.primaryBlack,
-                                            ),
+                                        valueColor: AlwaysStoppedAnimation(
+                                          AppTheme.primaryBlack,
+                                        ),
                                       ),
                                     )
                                     : const Text(

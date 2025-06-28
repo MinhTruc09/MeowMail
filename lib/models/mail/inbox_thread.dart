@@ -11,7 +11,6 @@ class InboxThread {
   final DateTime? lastCreatedAt;
   final bool? read;
   final bool? spam;
-  final bool? deleted;
 
   InboxThread({
     required this.threadId,
@@ -24,7 +23,6 @@ class InboxThread {
     this.lastCreatedAt,
     this.read,
     this.spam,
-    this.deleted,
   });
 
   factory InboxThread.fromJson(Map<String, dynamic> json) {
@@ -45,7 +43,6 @@ class InboxThread {
               : null,
       read: json['read'] as bool?,
       spam: json['spam'] as bool?,
-      deleted: json['deleted'] as bool?,
     );
   }
 
@@ -61,7 +58,6 @@ class InboxThread {
       'lastCreatedAt': lastCreatedAt?.toIso8601String(),
       'read': read,
       'spam': spam,
-      'deleted': deleted,
     };
   }
 }
