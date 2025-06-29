@@ -228,36 +228,10 @@ class MailService {
     int limit = 10,
   }) async {
     try {
-      debugPrint('📡 Lấy spam emails từ local storage');
-
-      // Get spam thread IDs from local storage
-      final prefs = await SharedPreferences.getInstance();
-      final spamThreadIds = prefs.getStringList('spam_threads') ?? [];
-
-      if (spamThreadIds.isEmpty) {
-        debugPrint('⚠️ Không có spam threads trong local storage');
-        return [];
-      }
-
-      // Get all inbox threads to find the spam ones
-      final allThreads = await getInbox(token, page: 1, limit: 1000);
-
-      // Convert string IDs to int
-      final spamIds =
-          spamThreadIds
-              .map((id) => int.tryParse(id))
-              .where((id) => id != null)
-              .cast<int>()
-              .toSet();
-
-      // Filter threads that are in spam list
-      final spamThreads =
-          allThreads
-              .where((thread) => spamIds.contains(thread.threadId))
-              .toList();
-
-      debugPrint('✅ Tìm thấy ${spamThreads.length} spam emails');
-      return spamThreads;
+      debugPrint('📡 Spam emails không được lưu local - trả về empty list');
+      // Since we don't store spam locally anymore and there's no API endpoint
+      // for getting spam emails, return empty list
+      return [];
     } catch (e) {
       debugPrint('❌ Lỗi getSpamEmails: $e');
       return [];
@@ -270,39 +244,12 @@ class MailService {
     int limit = 10,
   }) async {
     try {
-      debugPrint('📡 Lấy deleted emails từ local storage');
-
-      // Get deleted thread IDs from local storage
-      final prefs = await SharedPreferences.getInstance();
-      final deletedThreadIds = prefs.getStringList('deleted_threads') ?? [];
-
-      if (deletedThreadIds.isEmpty) {
-        debugPrint('⚠️ Không có deleted threads trong local storage');
-        return [];
-      }
-
-      // Get all inbox threads to find the deleted ones
-      final allThreads = await getInbox(token, page: 1, limit: 1000);
-
-      // Convert string IDs to int
-      final deletedIds =
-          deletedThreadIds
-              .map((id) => int.tryParse(id))
-              .where((id) => id != null)
-              .cast<int>()
-              .toSet();
-
-      // Filter threads that are in deleted list
-      final deletedThreads =
-          allThreads
-              .where((thread) => deletedIds.contains(thread.threadId))
-              .toList();
-
-      debugPrint('✅ Tìm thấy ${deletedThreads.length} deleted emails');
-      return deletedThreads;
+      debugPrint('📡 Deleted emails không được lưu local - trả về empty list');
+      // Since we don't store deleted locally anymore and there's no API endpoint
+      // for getting deleted emails, return empty list
+      return [];
     } catch (e) {
       debugPrint('❌ Lỗi getDeletedEmails: $e');
-      // Fallback: return empty list on error
       return [];
     }
   }

@@ -137,22 +137,10 @@ class _HistoryScreenState extends State<HistoryScreen>
 
   Future<void> _restoreFromDeleted(List<int> threadIds) async {
     try {
-      final prefs = await SharedPreferences.getInstance();
-
-      // Remove from local deleted threads list to restore them
-      final deletedThreads = prefs.getStringList('deleted_threads') ?? [];
-      for (int threadId in threadIds) {
-        deletedThreads.remove(threadId.toString());
-      }
-      await prefs.setStringList('deleted_threads', deletedThreads);
-
-      // Refresh data after restore
-      await _loadData();
-
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Đã khôi phục email từ thùng rác'),
+            content: Text('Tính năng khôi phục chưa được hỗ trợ'),
             backgroundColor: AppTheme.primaryYellow,
           ),
         );
@@ -172,14 +160,8 @@ class _HistoryScreenState extends State<HistoryScreen>
       final token = prefs.getString('token');
       if (token == null) throw Exception('Vui lòng đăng nhập lại');
 
+      // Delete via API only - no local storage
       await MailService.deleteThreads(token: token, threadIds: threadIds);
-
-      // Remove from local deleted threads list since they're permanently deleted
-      final deletedThreads = prefs.getStringList('deleted_threads') ?? [];
-      for (int threadId in threadIds) {
-        deletedThreads.remove(threadId.toString());
-      }
-      await prefs.setStringList('deleted_threads', deletedThreads);
 
       await _loadData();
 

@@ -5,6 +5,8 @@ import 'package:mewmail/models/mail/inbox_thread.dart';
 import 'package:mewmail/widgets/mail_list_tile.dart';
 import 'package:mewmail/screens/gmail_detail_screen.dart';
 import 'package:mewmail/widgets/theme.dart';
+import 'package:mewmail/widgets/common/skeleton_loading.dart';
+import 'package:mewmail/widgets/common/animated_widgets.dart';
 
 class SearchScreen extends StatefulWidget {
   const SearchScreen({super.key});
@@ -62,19 +64,8 @@ class _SearchScreenState extends State<SearchScreen> {
         limit: 1000, // Get more results for better search
       );
 
-      // Filter out deleted threads from local storage
-      final deletedThreadIds = prefs.getStringList('deleted_threads') ?? [];
-      final deletedIds =
-          deletedThreadIds
-              .map((id) => int.tryParse(id))
-              .where((id) => id != null)
-              .cast<int>()
-              .toSet();
-
-      final activeThreads =
-          allThreads
-              .where((thread) => !deletedIds.contains(thread.threadId))
-              .toList();
+      // No need to filter - API handles deleted threads
+      final activeThreads = allThreads;
 
       // Filter threads based on search query
       final keyword = query.trim().toLowerCase();
@@ -180,11 +171,7 @@ class _SearchScreenState extends State<SearchScreen> {
           Expanded(
             child:
                 _isLoading
-                    ? const Center(
-                      child: CircularProgressIndicator(
-                        color: AppTheme.primaryYellow,
-                      ),
-                    )
+                    ? const MailListSkeleton(itemCount: 6)
                     : _error != null
                     ? Center(
                       child: Column(
@@ -249,26 +236,33 @@ class _SearchScreenState extends State<SearchScreen> {
                       itemCount: _results.length,
                       itemBuilder: (context, index) {
                         final thread = _results[index];
-                        return MailListTile(
-                          thread: thread,
-                          myEmail: myEmail,
-                          isStarred: false,
-                          onTap: () {
-                            if (thread.threadId > 0) {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder:
-                                      (_) => GmailDetailScreen(
-                                        threadId: thread.threadId,
-                                      ),
-                                ),
-                              );
-                            }
-                          },
-                          onMarkAsRead: null, // No mark as read in search
-                          onSpam: null, // No spam action in search
-                          onDelete: null, // No delete action in search
+                        return SlideInAnimation(
+                          delay: Duration(milliseconds: index * 50),
+                          begin: const Offset(1.0, 0.0),
+                          child: FadeInAnimation(
+                            delay: Duration(milliseconds: index * 50),
+                            child: MailListTile(
+                              thread: thread,
+                              myEmail: myEmail,
+                              isStarred: false,
+                              onTap: () {
+                                if (thread.threadId > 0) {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder:
+                                          (_) => GmailDetailScreen(
+                                            threadId: thread.threadId,
+                                          ),
+                                    ),
+                                  );
+                                }
+                              },
+                              onMarkAsRead: null, // No mark as read in search
+                              onSpam: null, // No spam action in search
+                              onDelete: null, // No delete action in search
+                            ),
+                          ),
                         );
                       },
                     ),

@@ -8,6 +8,7 @@ import 'package:mewmail/widgets/common/custom_text_field.dart';
 import 'package:mewmail/widgets/common/custom_button.dart';
 import 'package:mewmail/services/user_service.dart';
 import 'package:mewmail/services/auth_service.dart';
+import 'package:mewmail/services/avatar_service.dart';
 import 'package:mewmail/models/user/profile_response.dart';
 
 class EditProfileScreen extends StatefulWidget {
@@ -157,6 +158,12 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         phone: _phoneController.text.trim(),
         avatarPath: _selectedImage?.path,
       );
+
+      // Clear avatar cache to force refresh
+      final myEmail = prefs.getString('email');
+      if (myEmail != null) {
+        AvatarService.clearAvatarCache(myEmail);
+      }
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(

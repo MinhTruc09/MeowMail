@@ -12,12 +12,12 @@ class UserProfile {
   });
 
   factory UserProfile.fromJson(Map<String, dynamic> json) {
-    // Handle server mapping bug - fields are swapped
+    // API now returns correct field mapping
     return UserProfile(
-      email: json['fullname'] ?? '', // Server puts email in fullname field
-      fullname: json['phone'] ?? '', // Server puts fullname in phone field  
-      phone: json['avatar'] ?? '', // Server puts phone in avatar field
-      avatar: json['email'] ?? '', // Server puts avatar URL in email field
+      email: json['email'] ?? '',
+      fullname: json['fullname'] ?? '',
+      phone: json['phone'] ?? '',
+      avatar: json['avatar'] ?? '',
     );
   }
 
@@ -41,9 +41,12 @@ class UserProfile {
       if (namePart.contains('.')) {
         return namePart
             .split('.')
-            .map((part) => part.isNotEmpty
-                ? part[0].toUpperCase() + part.substring(1).toLowerCase()
-                : '')
+            .map(
+              (part) =>
+                  part.isNotEmpty
+                      ? part[0].toUpperCase() + part.substring(1).toLowerCase()
+                      : '',
+            )
             .join(' ');
       }
       return namePart.isNotEmpty
@@ -65,7 +68,7 @@ class UserProfile {
 
   // Helper method to check if avatar URL is valid
   bool get hasValidAvatar {
-    return avatar.isNotEmpty && 
-           (avatar.startsWith('http://') || avatar.startsWith('https://'));
+    return avatar.isNotEmpty &&
+        (avatar.startsWith('http://') || avatar.startsWith('https://'));
   }
 }

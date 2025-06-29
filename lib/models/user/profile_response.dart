@@ -12,12 +12,12 @@ class ProfileResponseDto {
   });
 
   factory ProfileResponseDto.fromJson(Map<String, dynamic> json) {
-    // Handle server mapping bug - fields are swapped
+    // API now returns correct field mapping
     return ProfileResponseDto(
-      email: json['fullname'] ?? '', // Server puts email in fullname field
-      fullname: json['phone'] ?? '', // Server puts fullname in phone field
-      phone: json['avatar'] ?? '', // Server puts phone in avatar field
-      avatar: json['email'] ?? '', // Server puts avatar URL in email field
+      email: json['email'] ?? '',
+      fullname: json['fullname'] ?? '',
+      phone: json['phone'] ?? '',
+      avatar: json['avatar'] ?? '',
     );
   }
 

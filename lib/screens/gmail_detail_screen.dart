@@ -6,6 +6,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:intl/intl.dart';
 import 'package:mewmail/widgets/theme.dart';
 import 'package:html/parser.dart' as html_parser;
+import 'package:mewmail/widgets/common/skeleton_loading.dart';
+import 'package:mewmail/widgets/common/animated_widgets.dart';
 
 class GmailDetailScreen extends StatefulWidget {
   final int threadId;
@@ -233,29 +235,29 @@ class _GmailDetailScreenState extends State<GmailDetailScreen> {
       ),
       body:
           isLoading
-              ? const Center(
-                child: CircularProgressIndicator(color: AppTheme.primaryYellow),
-              )
+              ? const MessageDetailSkeleton(messageCount: 5)
               : error != null
-              ? Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Icon(
-                      Icons.error_outline,
-                      size: 64,
-                      color: AppTheme.primaryBlack,
-                    ),
-                    const SizedBox(height: 16),
-                    Text(
-                      error!,
-                      style: const TextStyle(
+              ? FadeInAnimation(
+                child: Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Icon(
+                        Icons.error_outline,
+                        size: 64,
                         color: AppTheme.primaryBlack,
-                        fontSize: 16,
                       ),
-                      textAlign: TextAlign.center,
-                    ),
-                  ],
+                      const SizedBox(height: 16),
+                      Text(
+                        error!,
+                        style: const TextStyle(
+                          color: AppTheme.primaryBlack,
+                          fontSize: 16,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    ],
+                  ),
                 ),
               )
               : Column(
@@ -286,66 +288,82 @@ class _GmailDetailScreenState extends State<GmailDetailScreen> {
                                   mail.senderEmail,
                                 );
 
-                        return Container(
-                          decoration: BoxDecoration(
-                            color: AppTheme.primaryWhite,
-                            borderRadius: BorderRadius.circular(8),
-                            border: Border.all(
-                              color: AppTheme.primaryBlack.withValues(
-                                alpha: 0.1,
-                              ),
-                            ),
-                            boxShadow: [
-                              BoxShadow(
-                                color: AppTheme.primaryBlack.withValues(
-                                  alpha: 0.05,
-                                ),
-                                blurRadius: 4,
-                                offset: const Offset(0, 2),
-                              ),
-                            ],
-                          ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              // Email header
-                              Container(
-                                padding: const EdgeInsets.all(16),
-                                decoration: BoxDecoration(
-                                  color: Colors.grey[50],
-                                  borderRadius: const BorderRadius.only(
-                                    topLeft: Radius.circular(8),
-                                    topRight: Radius.circular(8),
+                        return SlideInAnimation(
+                          delay: Duration(milliseconds: index * 100),
+                          begin: const Offset(0.0, 0.3),
+                          child: FadeInAnimation(
+                            delay: Duration(milliseconds: index * 100),
+                            child: Container(
+                              decoration: BoxDecoration(
+                                color: AppTheme.primaryWhite,
+                                borderRadius: BorderRadius.circular(8),
+                                border: Border.all(
+                                  color: AppTheme.primaryBlack.withValues(
+                                    alpha: 0.1,
                                   ),
                                 ),
-                                child: Row(
-                                  children: [
-                                    _buildAvatar(
-                                      mail.senderEmail,
-                                      avatarColor,
-                                      avatarText,
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: AppTheme.primaryBlack.withValues(
+                                      alpha: 0.05,
                                     ),
-                                    const SizedBox(width: 12),
-                                    Expanded(
-                                      child: Column(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
-                                        children: [
-                                          Row(
+                                    blurRadius: 4,
+                                    offset: const Offset(0, 2),
+                                  ),
+                                ],
+                              ),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  // Email header
+                                  Container(
+                                    padding: const EdgeInsets.all(16),
+                                    decoration: BoxDecoration(
+                                      color: Colors.grey[50],
+                                      borderRadius: const BorderRadius.only(
+                                        topLeft: Radius.circular(8),
+                                        topRight: Radius.circular(8),
+                                      ),
+                                    ),
+                                    child: Row(
+                                      children: [
+                                        _buildAvatar(
+                                          mail.senderEmail,
+                                          avatarColor,
+                                          avatarText,
+                                        ),
+                                        const SizedBox(width: 12),
+                                        Expanded(
+                                          child: Column(
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
                                             children: [
-                                              Expanded(
-                                                child: Text(
-                                                  senderName,
-                                                  style: const TextStyle(
-                                                    fontWeight: FontWeight.w600,
-                                                    fontSize: 16,
+                                              Row(
+                                                children: [
+                                                  Expanded(
+                                                    child: Text(
+                                                      senderName,
+                                                      style: const TextStyle(
+                                                        fontWeight:
+                                                            FontWeight.w600,
+                                                        fontSize: 16,
+                                                      ),
+                                                    ),
                                                   ),
-                                                ),
+                                                  Text(
+                                                    DateFormat(
+                                                      'MMM d, yyyy HH:mm',
+                                                    ).format(mail.createdAt),
+                                                    style: TextStyle(
+                                                      fontSize: 12,
+                                                      color: Colors.grey[600],
+                                                    ),
+                                                  ),
+                                                ],
                                               ),
+                                              const SizedBox(height: 2),
                                               Text(
-                                                DateFormat(
-                                                  'MMM d, yyyy HH:mm',
-                                                ).format(mail.createdAt),
+                                                'to ${mail.receiverName.isNotEmpty ? mail.receiverName : mail.receiverEmail}',
                                                 style: TextStyle(
                                                   fontSize: 12,
                                                   color: Colors.grey[600],
@@ -353,97 +371,90 @@ class _GmailDetailScreenState extends State<GmailDetailScreen> {
                                               ),
                                             ],
                                           ),
-                                          const SizedBox(height: 2),
-                                          Text(
-                                            'to ${mail.receiverName.isNotEmpty ? mail.receiverName : mail.receiverEmail}',
-                                            style: TextStyle(
-                                              fontSize: 12,
-                                              color: Colors.grey[600],
+                                        ),
+                                        IconButton(
+                                          icon: const Icon(
+                                            Icons.more_vert,
+                                            size: 20,
+                                          ),
+                                          onPressed: () {
+                                            // TODO: Show email options
+                                          },
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  // Email content
+                                  Padding(
+                                    padding: const EdgeInsets.all(16),
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        if (mail.subject.isNotEmpty)
+                                          Padding(
+                                            padding: const EdgeInsets.only(
+                                              bottom: 12,
+                                            ),
+                                            child: Text(
+                                              mail.subject,
+                                              style: const TextStyle(
+                                                fontWeight: FontWeight.w600,
+                                                fontSize: 16,
+                                              ),
+                                            ),
+                                          ),
+                                        Text(
+                                          _parseHtmlContent(mail.content),
+                                          style: const TextStyle(
+                                            fontSize: 14,
+                                            height: 1.5,
+                                          ),
+                                        ),
+                                        if (mail.attachments.isNotEmpty) ...[
+                                          const SizedBox(height: 12),
+                                          ...mail.attachments.map(
+                                            (attachment) => Container(
+                                              margin: const EdgeInsets.only(
+                                                bottom: 4,
+                                              ),
+                                              padding:
+                                                  const EdgeInsets.symmetric(
+                                                    horizontal: 12,
+                                                    vertical: 8,
+                                                  ),
+                                              decoration: BoxDecoration(
+                                                color: Colors.grey[100],
+                                                borderRadius:
+                                                    BorderRadius.circular(4),
+                                              ),
+                                              child: Row(
+                                                mainAxisSize: MainAxisSize.min,
+                                                children: [
+                                                  const Icon(
+                                                    Icons.attach_file,
+                                                    size: 16,
+                                                    color: Colors.blue,
+                                                  ),
+                                                  const SizedBox(width: 4),
+                                                  Text(
+                                                    attachment.fileName,
+                                                    style: const TextStyle(
+                                                      color: Colors.blue,
+                                                      fontSize: 12,
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
                                             ),
                                           ),
                                         ],
-                                      ),
+                                      ],
                                     ),
-                                    IconButton(
-                                      icon: const Icon(
-                                        Icons.more_vert,
-                                        size: 20,
-                                      ),
-                                      onPressed: () {
-                                        // TODO: Show email options
-                                      },
-                                    ),
-                                  ],
-                                ),
+                                  ),
+                                ],
                               ),
-                              // Email content
-                              Padding(
-                                padding: const EdgeInsets.all(16),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    if (mail.subject.isNotEmpty)
-                                      Padding(
-                                        padding: const EdgeInsets.only(
-                                          bottom: 12,
-                                        ),
-                                        child: Text(
-                                          mail.subject,
-                                          style: const TextStyle(
-                                            fontWeight: FontWeight.w600,
-                                            fontSize: 16,
-                                          ),
-                                        ),
-                                      ),
-                                    Text(
-                                      _parseHtmlContent(mail.content),
-                                      style: const TextStyle(
-                                        fontSize: 14,
-                                        height: 1.5,
-                                      ),
-                                    ),
-                                    if (mail.attachments.isNotEmpty) ...[
-                                      const SizedBox(height: 12),
-                                      ...mail.attachments.map(
-                                        (attachment) => Container(
-                                          margin: const EdgeInsets.only(
-                                            bottom: 4,
-                                          ),
-                                          padding: const EdgeInsets.symmetric(
-                                            horizontal: 12,
-                                            vertical: 8,
-                                          ),
-                                          decoration: BoxDecoration(
-                                            color: Colors.grey[100],
-                                            borderRadius: BorderRadius.circular(
-                                              4,
-                                            ),
-                                          ),
-                                          child: Row(
-                                            mainAxisSize: MainAxisSize.min,
-                                            children: [
-                                              const Icon(
-                                                Icons.attach_file,
-                                                size: 16,
-                                                color: Colors.blue,
-                                              ),
-                                              const SizedBox(width: 4),
-                                              Text(
-                                                attachment.fileName,
-                                                style: const TextStyle(
-                                                  color: Colors.blue,
-                                                  fontSize: 12,
-                                                ),
-                                              ),
-                                            ],
-                                          ),
-                                        ),
-                                      ),
-                                    ],
-                                  ],
-                                ),
-                              ),
-                            ],
+                            ),
                           ),
                         );
                       },

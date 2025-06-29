@@ -36,8 +36,8 @@ class AvatarService {
         if (response.statusCode == 200) {
           final json = jsonDecode(response.body);
           if (json['data'] != null) {
-            // Handle server mapping bug - avatar URL is in 'email' field
-            final avatarUrl = json['data']['email'] as String?;
+            // API now returns correct field mapping
+            final avatarUrl = json['data']['avatar'] as String?;
 
             // Validate avatar URL
             if (avatarUrl != null &&
@@ -105,5 +105,15 @@ class AvatarService {
     return username.length >= 2
         ? username.substring(0, 2).toUpperCase()
         : username[0].toUpperCase();
+  }
+
+  /// Clear avatar cache for specific email
+  static void clearAvatarCache(String email) {
+    _avatarCache.remove(email);
+  }
+
+  /// Clear all avatar cache
+  static void clearAllAvatarCache() {
+    _avatarCache.clear();
   }
 }

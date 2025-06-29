@@ -10,6 +10,8 @@ import 'package:mewmail/widgets/theme.dart';
 import 'package:mewmail/widgets/home_drawer.dart';
 import 'package:mewmail/widgets/send_mail_dialog.dart';
 import 'package:mewmail/widgets/create_group_dialog.dart';
+import 'package:mewmail/widgets/common/skeleton_loading.dart';
+import 'package:mewmail/widgets/common/animated_widgets.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -121,23 +123,10 @@ class _HomeScreenState extends State<HomeScreen> {
       ).timeout(const Duration(seconds: 15));
       debugPrint('✅ Đã nhận được ${threads.length} threads từ API');
 
-      // Filter out deleted threads from local storage
-      final deletedThreadIds = prefs.getStringList('deleted_threads') ?? [];
-      final deletedIds =
-          deletedThreadIds
-              .map((id) => int.tryParse(id))
-              .where((id) => id != null)
-              .cast<int>()
-              .toSet();
+      // No need to filter - API handles deleted threads
+      final filteredThreads = threads;
 
-      final filteredThreads =
-          threads
-              .where((thread) => !deletedIds.contains(thread.threadId))
-              .toList();
-
-      debugPrint(
-        '✅ Sau khi filter: ${filteredThreads.length} threads (đã loại bỏ ${threads.length - filteredThreads.length} threads đã xóa)',
-      );
+      debugPrint('✅ Hiển thị ${filteredThreads.length} threads từ API');
 
       if (mounted) {
         setState(() {
@@ -287,18 +276,12 @@ class _HomeScreenState extends State<HomeScreen> {
       final token = prefs.getString('token');
       if (token == null) throw Exception('Vui lòng đăng nhập lại');
 
+      // Mark as spam via API only - no local storage
       await MailService.spamMail(token: token, threadIds: threadIds);
 
-      // Store spam thread IDs locally for history tracking
-      final spamThreads = prefs.getStringList('spam_threads') ?? [];
-      for (int threadId in threadIds) {
-        if (!spamThreads.contains(threadId.toString())) {
-          spamThreads.add(threadId.toString());
-        }
-      }
-      await prefs.setStringList('spam_threads', spamThreads);
+      debugPrint('✅ Đã đánh dấu ${threadIds.length} threads là spam qua API');
 
-      // Refresh data
+      // Refresh data to get updated list from server
       await _loadData(force: true);
 
       if (mounted) {
@@ -337,23 +320,12 @@ class _HomeScreenState extends State<HomeScreen> {
       final token = prefs.getString('token');
       if (token == null) throw Exception('Vui lòng đăng nhập lại');
 
-      // Try to delete via API first
+      // Delete via API only - no local storage
       await MailService.deleteThreads(token: token, threadIds: threadIds);
 
-      // Only store locally if API call succeeds
-      final deletedThreads = prefs.getStringList('deleted_threads') ?? [];
-      for (int threadId in threadIds) {
-        if (!deletedThreads.contains(threadId.toString())) {
-          deletedThreads.add(threadId.toString());
-        }
-      }
-      await prefs.setStringList('deleted_threads', deletedThreads);
+      debugPrint('✅ Đã xóa ${threadIds.length} threads qua API');
 
-      debugPrint(
-        '✅ Đã lưu ${threadIds.length} deleted threads vào local storage: $deletedThreads',
-      );
-
-      // Refresh data
+      // Refresh data to get updated list from server
       await _loadData(force: true);
 
       if (mounted) {
@@ -534,57 +506,110 @@ class _HomeScreenState extends State<HomeScreen> {
           Expanded(
             child:
                 isLoading
-                    ? const Center(child: CircularProgressIndicator())
+                    ? const MailListSkeleton(itemCount: 8)
                     : _error != null
-                    ? Center(
-                      child: Text(
-                        _error!,
-                        style: const TextStyle(color: AppTheme.primaryBlack),
+                    ? FadeInAnimation(
+                      child: Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.error_outline,
+                              size: 64,
+                              color: AppTheme.primaryBlack.withValues(
+                                alpha: 0.5,
+                              ),
+                            ),
+                            const SizedBox(height: 16),
+                            Text(
+                              _error!,
+                              style: const TextStyle(
+                                color: AppTheme.primaryBlack,
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                          ],
+                        ),
                       ),
                     )
                     : RefreshIndicator(
                       onRefresh: _refresh,
                       child:
                           inboxThreads.isEmpty
-                              ? const Center(child: Text('Hộp thư trống'))
+                              ? FadeInAnimation(
+                                child: Center(
+                                  child: Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Icon(
+                                        Icons.inbox_outlined,
+                                        size: 64,
+                                        color: AppTheme.primaryBlack.withValues(
+                                          alpha: 0.5,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 16),
+                                      const Text(
+                                        'Hộp thư trống',
+                                        style: TextStyle(
+                                          color: AppTheme.primaryBlack,
+                                          fontSize: 16,
+                                          fontFamily: 'Borel',
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              )
                               : ListView.builder(
                                 itemCount: inboxThreads.length,
                                 itemBuilder: (context, index) {
                                   final thread = inboxThreads[index];
-                                  return MailListTile(
-                                    thread: thread,
-                                    myEmail: myEmail,
-                                    isStarred:
-                                        false, // TODO: truyền trạng thái star nếu có
-                                    onTap: () {
-                                      if (thread.threadId > 0) {
-                                        Navigator.push(
-                                          context,
-                                          MaterialPageRoute(
-                                            builder:
-                                                (_) => GmailDetailScreen(
-                                                  threadId: thread.threadId,
+                                  return SlideInAnimation(
+                                    delay: Duration(milliseconds: index * 50),
+                                    begin: const Offset(1.0, 0.0),
+                                    child: FadeInAnimation(
+                                      delay: Duration(milliseconds: index * 50),
+                                      child: MailListTile(
+                                        thread: thread,
+                                        myEmail: myEmail,
+                                        isStarred:
+                                            false, // TODO: truyền trạng thái star nếu có
+                                        onTap: () {
+                                          if (thread.threadId > 0) {
+                                            Navigator.push(
+                                              context,
+                                              MaterialPageRoute(
+                                                builder:
+                                                    (_) => GmailDetailScreen(
+                                                      threadId: thread.threadId,
+                                                    ),
+                                              ),
+                                            );
+                                          } else {
+                                            ScaffoldMessenger.of(
+                                              context,
+                                            ).showSnackBar(
+                                              const SnackBar(
+                                                content: Text(
+                                                  'Không tìm thấy hội thoại!',
                                                 ),
-                                          ),
-                                        );
-                                      } else {
-                                        ScaffoldMessenger.of(
-                                          context,
-                                        ).showSnackBar(
-                                          const SnackBar(
-                                            content: Text(
-                                              'Không tìm thấy hội thoại!',
-                                            ),
-                                          ),
-                                        );
-                                      }
-                                    },
-                                    onMarkAsRead:
-                                        () => _markAsRead([thread.threadId]),
-                                    onSpam:
-                                        () => _markAsSpam([thread.threadId]),
-                                    onDelete:
-                                        () => _deleteThreads([thread.threadId]),
+                                              ),
+                                            );
+                                          }
+                                        },
+                                        onMarkAsRead:
+                                            () =>
+                                                _markAsRead([thread.threadId]),
+                                        onSpam:
+                                            () =>
+                                                _markAsSpam([thread.threadId]),
+                                        onDelete:
+                                            () => _deleteThreads([
+                                              thread.threadId,
+                                            ]),
+                                      ),
+                                    ),
                                   );
                                 },
                               ),
@@ -592,11 +617,17 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ],
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _showSendMailDialog,
-        backgroundColor: AppTheme.primaryYellow,
-        foregroundColor: AppTheme.primaryBlack,
-        child: const Icon(Icons.create),
+      floatingActionButton: ScaleInAnimation(
+        delay: const Duration(milliseconds: 800),
+        child: BouncyButton(
+          onTap: _showSendMailDialog,
+          child: FloatingActionButton(
+            onPressed: null, // Handled by BouncyButton
+            backgroundColor: AppTheme.primaryYellow,
+            foregroundColor: AppTheme.primaryBlack,
+            child: const Icon(Icons.create),
+          ),
+        ),
       ),
     );
   }
