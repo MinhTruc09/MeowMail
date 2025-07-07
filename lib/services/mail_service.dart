@@ -369,8 +369,12 @@ class MailService {
         debugPrint('✅ Đánh dấu đã đọc thành công');
       } else if (response.statusCode == 403 || response.statusCode == 401) {
         debugPrint('❌ Lỗi xác thực: ${response.statusCode} - ${response.body}');
-        // Don't try to refresh token, just logout immediately
-        throw Exception('Session expired, please log in again');
+        final newToken = await AuthService.refreshTokenIfNeeded(token);
+        if (newToken != null) {
+          return await readMail(token: newToken, threadIds: threadIds);
+        } else {
+          throw Exception('Session expired, please log in again');
+        }
       } else {
         debugPrint('❌ Lỗi readMail: ${response.statusCode} - ${response.body}');
         throw Exception('Lỗi đánh dấu đã đọc: ${response.body}');

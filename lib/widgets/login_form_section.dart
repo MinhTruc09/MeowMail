@@ -90,13 +90,13 @@ class _LoginFormSectionState extends State<LoginFormSection> {
                 keyboardType: TextInputType.emailAddress,
                 prefixIcon: Icons.email,
               ),
-              const SizedBox(height: 16),
+              SizedBox(height: screenHeight * 0.02),
               PasswordTextField(
                 label: "Mật khẩu",
                 hintText: "************",
                 controller: _passwordController,
               ),
-              const SizedBox(height: 6),
+              SizedBox(height: screenHeight * 0.01),
               Align(
                 alignment: Alignment.centerRight,
                 child: TextButton(
@@ -107,7 +107,7 @@ class _LoginFormSectionState extends State<LoginFormSection> {
                     );
                   },
                   style: TextButton.styleFrom(
-                    padding: EdgeInsets.zero,
+                    padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                     minimumSize: Size(0, 0),
                     tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                   ),
@@ -116,14 +116,14 @@ class _LoginFormSectionState extends State<LoginFormSection> {
                     style: theme.textTheme.labelLarge?.copyWith(
                       color: AppTheme.primaryBlack,
                       fontWeight: FontWeight.w500,
-                      decoration: TextDecoration.none,
-                      fontSize: screenWidth * 0.035,
+                      decoration: TextDecoration.underline,
+                      fontSize: AppTheme.responsiveWidth(context, 0.035),
                       fontFamily: 'Borel',
                     ),
                   ),
                 ),
               ),
-              const SizedBox(height: 16),
+              SizedBox(height: screenHeight * 0.02),
               CustomButton(
                 text: "ĐĂNG NHẬP",
                 onPressed: _loading ? null : _submitLogin,

@@ -148,7 +148,10 @@ class _HistoryScreenState extends State<HistoryScreen>
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Lỗi: $e'), backgroundColor: Colors.red),
+          SnackBar(
+            content: Text('Lỗi: $e'),
+            backgroundColor: AppTheme.primaryBlack,
+          ),
         );
       }
     }

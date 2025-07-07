@@ -2,12 +2,63 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:mewmail/widgets/theme.dart';
 import 'package:mewmail/widgets/send_mail_dialog.dart';
+import 'package:mewmail/services/user_service.dart';
+import 'package:mewmail/models/user/profile_response.dart';
 
-class HomeDrawer extends StatelessWidget {
+class HomeDrawer extends StatefulWidget {
   final String? userEmail;
   final VoidCallback? onRefresh;
 
   const HomeDrawer({super.key, this.userEmail, this.onRefresh});
+
+  @override
+  State<HomeDrawer> createState() => _HomeDrawerState();
+}
+
+class _HomeDrawerState extends State<HomeDrawer> {
+  ProfileResponseDto? _userProfile;
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUserProfile();
+  }
+
+  // Method to refresh user profile (call this when user updates profile)
+  void refreshProfile() {
+    _loadUserProfile();
+  }
+
+  Future<void> _loadUserProfile() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('token');
+
+      if (token != null) {
+        final response = await UserService.myProfile(token);
+        if (mounted) {
+          setState(() {
+            _userProfile = response.data;
+            _isLoading = false;
+          });
+        }
+      } else {
+        if (mounted) {
+          setState(() {
+            _isLoading = false;
+          });
+        }
+      }
+    } catch (e) {
+      debugPrint('❌ Lỗi load user profile trong drawer: $e');
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
+  }
 
   Future<void> _logout(BuildContext context) async {
     final prefs = await SharedPreferences.getInstance();
@@ -24,22 +75,31 @@ class HomeDrawer extends StatelessWidget {
       builder:
           (context) => SendMailDialog(
             onSend: () {
-              if (onRefresh != null) {
-                onRefresh!();
+              if (widget.onRefresh != null) {
+                widget.onRefresh!();
               }
             },
           ),
     );
   }
 
-  String _getInitials(String? email) {
-    if (email == null || email.isEmpty) return 'U';
-    return email.substring(0, 1).toUpperCase();
+  String _getInitials(String? name) {
+    if (name == null || name.isEmpty) return 'U';
+    return name.substring(0, 1).toUpperCase();
   }
 
-  String _getDisplayName(String? email) {
-    if (email == null || email.isEmpty) return 'Người dùng';
-    return email.split('@')[0];
+  String _getDisplayName() {
+    if (_userProfile?.fullname != null && _userProfile!.fullname!.isNotEmpty) {
+      return _userProfile!.fullname!;
+    }
+    if (widget.userEmail != null && widget.userEmail!.isNotEmpty) {
+      return widget.userEmail!.split('@')[0];
+    }
+    return 'Người dùng';
+  }
+
+  String _getUserEmail() {
+    return _userProfile?.email ?? widget.userEmail ?? 'Không có email';
   }
 
   @override
@@ -62,23 +122,36 @@ class HomeDrawer extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 // Avatar
-                CircleAvatar(
-                  radius: 35,
-                  backgroundColor: AppTheme.primaryYellow,
-                  child: Text(
-                    _getInitials(userEmail),
-                    style: const TextStyle(
-                      color: AppTheme.primaryBlack,
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
-                      fontFamily: 'Borel',
+                _isLoading
+                    ? const CircularProgressIndicator(
+                      color: AppTheme.primaryYellow,
+                    )
+                    : CircleAvatar(
+                      radius: 35,
+                      backgroundColor: AppTheme.primaryYellow,
+                      backgroundImage:
+                          _userProfile?.avatar != null &&
+                                  _userProfile!.avatar!.isNotEmpty
+                              ? NetworkImage(_userProfile!.avatar!)
+                              : null,
+                      child:
+                          _userProfile?.avatar == null ||
+                                  _userProfile!.avatar!.isEmpty
+                              ? Text(
+                                _getInitials(_getDisplayName()),
+                                style: const TextStyle(
+                                  color: AppTheme.primaryBlack,
+                                  fontSize: 24,
+                                  fontWeight: FontWeight.bold,
+                                  fontFamily: 'Borel',
+                                ),
+                              )
+                              : null,
                     ),
-                  ),
-                ),
                 const SizedBox(height: 15),
                 // Tên người dùng
                 Text(
-                  _getDisplayName(userEmail),
+                  _getDisplayName(),
                   style: const TextStyle(
                     color: AppTheme.primaryWhite,
                     fontSize: 18,
@@ -89,7 +162,7 @@ class HomeDrawer extends StatelessWidget {
                 const SizedBox(height: 5),
                 // Email
                 Text(
-                  userEmail ?? 'user@example.com',
+                  _getUserEmail(),
                   style: const TextStyle(
                     color: AppTheme.primaryYellow,
                     fontSize: 14,

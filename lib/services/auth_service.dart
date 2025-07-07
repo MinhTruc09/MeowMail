@@ -82,10 +82,15 @@ class AuthService {
         debugPrint('✅ Refresh token thành công');
         return newToken;
       } else {
+        // If refresh token fails, clear all auth data
+        debugPrint('❌ Refresh token thất bại, xóa dữ liệu đăng nhập');
+        await logout();
         throw Exception('Refresh token thất bại: ${response.body}');
       }
     } catch (e) {
       debugPrint('❌ Lỗi refresh token: $e');
+      // Clear auth data on any refresh token error
+      await logout();
       return null;
     }
   }

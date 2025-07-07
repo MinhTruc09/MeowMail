@@ -28,12 +28,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
     _loadProfile();
   }
 
-  Future<void> _loadProfile() async {
+  Future<void> _loadProfile({bool force = false}) async {
+    if (!force && !isLoading) {
+      setState(() => isLoading = true);
+    }
+
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('token');
 
     if (token == null) {
-      Navigator.pushNamedAndRemoveUntil(context, '/login', (route) => false);
+      if (mounted) {
+        Navigator.pushNamedAndRemoveUntil(context, '/login', (route) => false);
+      }
       return;
     }
 
@@ -122,170 +128,182 @@ class _SettingsScreenState extends State<SettingsScreen> {
         elevation: 0,
         centerTitle: false,
       ),
-      body:
-          isLoading
-              ? Column(
-                children: [
-                  const ProfileSkeleton(),
-                  Expanded(
-                    child: ListView.builder(
-                      itemCount: 6,
-                      itemBuilder: (context, index) {
-                        return Container(
-                          margin: EdgeInsets.symmetric(
+      body: RefreshIndicator(
+        onRefresh: () => _loadProfile(force: true),
+        child:
+            isLoading
+                ? SingleChildScrollView(
+                  child: Column(
+                    children: [
+                      const ProfileSkeleton(),
+                      SizedBox(
+                        height: MediaQuery.of(context).size.height * 0.6,
+                        child: ListView.builder(
+                          physics: const NeverScrollableScrollPhysics(),
+                          itemCount: 6,
+                          itemBuilder: (context, index) {
+                            return Container(
+                              margin: EdgeInsets.symmetric(
+                                horizontal: AppTheme.responsivePadding(
+                                  context,
+                                  AppTheme.defaultPadding,
+                                ),
+                                vertical: AppTheme.responsivePadding(
+                                  context,
+                                  AppTheme.smallPadding,
+                                ),
+                              ),
+                              child: SkeletonLoading(
+                                height: 60,
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                            );
+                          },
+                        ),
+                      ),
+                    ],
+                  ),
+                )
+                : FadeInAnimation(
+                  child: SingleChildScrollView(
+                    child: Column(
+                      children: [
+                        // Profile Section
+                        SlideInAnimation(
+                          begin: const Offset(0.0, -0.5),
+                          child: Container(
+                            padding: EdgeInsets.all(
+                              AppTheme.responsivePadding(
+                                context,
+                                AppTheme.defaultPadding,
+                              ),
+                            ),
+                            child: ProfileCard(
+                              name: profile!.fullname,
+                              email: profile!.email,
+                              avatarUrl: profile!.avatar,
+                            ),
+                          ),
+                        ),
+
+                        Container(
+                          padding: EdgeInsets.symmetric(
                             horizontal: AppTheme.responsivePadding(
                               context,
                               AppTheme.defaultPadding,
                             ),
-                            vertical: AppTheme.responsivePadding(
-                              context,
-                              AppTheme.smallPadding,
-                            ),
                           ),
-                          child: SkeletonLoading(
-                            height: 60,
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                        );
-                      },
-                    ),
-                  ),
-                ],
-              )
-              : FadeInAnimation(
-                child: Column(
-                  children: [
-                    // Profile Section
-                    SlideInAnimation(
-                      begin: const Offset(0.0, -0.5),
-                      child: Container(
-                        padding: EdgeInsets.all(
-                          AppTheme.responsivePadding(
-                            context,
-                            AppTheme.defaultPadding,
-                          ),
-                        ),
-                        child: ProfileCard(
-                          name: profile!.fullname,
-                          email: profile!.email,
-                          avatarUrl: profile!.avatar,
-                        ),
-                      ),
-                    ),
-
-                    Expanded(
-                      child: Container(
-                        padding: EdgeInsets.symmetric(
-                          horizontal: AppTheme.responsivePadding(
-                            context,
-                            AppTheme.defaultPadding,
-                          ),
-                        ),
-                        child: StaggeredListAnimation(
-                          staggerDelay: const Duration(milliseconds: 100),
-                          children: [
-                            InfoCard(
-                              title: 'Chỉnh sửa thông tin',
-                              icon: Icons.edit,
-                              trailing: const Icon(Icons.chevron_right),
-                              onTap: () async {
-                                final result = await Navigator.pushNamed(
-                                  context,
-                                  '/edit_profile',
-                                );
-                                if (result == true) {
-                                  // Clear avatar cache and reload profile
-                                  final prefs =
-                                      await SharedPreferences.getInstance();
-                                  final myEmail = prefs.getString('email');
-                                  if (myEmail != null) {
-                                    AvatarService.clearAvatarCache(myEmail);
+                          child: StaggeredListAnimation(
+                            staggerDelay: const Duration(milliseconds: 100),
+                            children: [
+                              InfoCard(
+                                title: 'Chỉnh sửa thông tin',
+                                icon: Icons.edit,
+                                trailing: const Icon(Icons.chevron_right),
+                                onTap: () async {
+                                  final result = await Navigator.pushNamed(
+                                    context,
+                                    '/edit_profile',
+                                  );
+                                  if (result == true) {
+                                    // Clear avatar cache and reload profile
+                                    final prefs =
+                                        await SharedPreferences.getInstance();
+                                    final myEmail = prefs.getString('email');
+                                    if (myEmail != null) {
+                                      AvatarService.clearAvatarCache(myEmail);
+                                    }
+                                    _loadProfile(); // Reload profile after successful edit
                                   }
-                                  _loadProfile(); // Reload profile after successful edit
-                                }
-                              },
-                            ),
-
-                            InfoCard(
-                              title: 'Đổi mật khẩu',
-                              icon: Icons.lock,
-                              trailing: const Icon(Icons.chevron_right),
-                              onTap: () {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder:
-                                        (context) =>
-                                            const ChangePasswordScreen(),
-                                  ),
-                                );
-                              },
-                            ),
-
-                            InfoCard(
-                              title: 'Chuyển đổi tài khoản',
-                              icon: Icons.switch_account,
-                              trailing: const Icon(Icons.add),
-                              onTap: () {
-                                // TODO: Chuyển đổi tài khoản
-                              },
-                            ),
-
-                            InfoCard(
-                              title: 'Chế độ tối',
-                              icon: Icons.dark_mode,
-                              trailing: Switch(
-                                value:
-                                    false, // TODO: Thay bằng biến trạng thái dark mode
-                                onChanged: (val) {
-                                  // TODO: Xử lý chuyển dark mode
                                 },
                               ),
-                            ),
 
-                            InfoCard(
-                              title: 'Tìm hiểu về chúng tôi',
-                              icon: Icons.info_outline,
-                              trailing: const Icon(Icons.chevron_right),
-                              backgroundColor: AppTheme.primaryYellow
-                                  .withValues(alpha: 0.7),
-                              onTap:
-                                  () => Navigator.pushNamed(context, '/about'),
-                            ),
+                              InfoCard(
+                                title: 'Đổi mật khẩu',
+                                icon: Icons.lock,
+                                trailing: const Icon(Icons.chevron_right),
+                                onTap: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder:
+                                          (context) =>
+                                              const ChangePasswordScreen(),
+                                    ),
+                                  );
+                                },
+                              ),
 
-                            InfoCard(
-                              title: 'Chính sách',
-                              icon: Icons.policy,
-                              trailing: const Icon(Icons.chevron_right),
-                              backgroundColor: AppTheme.primaryYellow
-                                  .withValues(alpha: 0.7),
-                              onTap:
-                                  () => Navigator.pushNamed(context, '/policy'),
-                            ),
+                              InfoCard(
+                                title: 'Chuyển đổi tài khoản',
+                                icon: Icons.switch_account,
+                                trailing: const Icon(Icons.add),
+                                onTap: () {
+                                  // TODO: Chuyển đổi tài khoản
+                                },
+                              ),
 
-                            InfoCard(
-                              title: 'Điều khoản dịch vụ',
-                              icon: Icons.rule,
-                              trailing: const Icon(Icons.chevron_right),
-                              backgroundColor: AppTheme.primaryYellow
-                                  .withValues(alpha: 0.7),
-                              onTap:
-                                  () => Navigator.pushNamed(context, '/terms'),
-                            ),
+                              InfoCard(
+                                title: 'Chế độ tối',
+                                icon: Icons.dark_mode,
+                                trailing: Switch(
+                                  value:
+                                      false, // TODO: Thay bằng biến trạng thái dark mode
+                                  onChanged: (val) {
+                                    // TODO: Xử lý chuyển dark mode
+                                  },
+                                ),
+                              ),
 
-                            InfoCard(
-                              title: 'Đăng xuất',
-                              icon: Icons.logout,
-                              backgroundColor: AppTheme.primaryWhite,
-                              onTap: _logout,
-                            ),
-                          ],
+                              InfoCard(
+                                title: 'Tìm hiểu về chúng tôi',
+                                icon: Icons.info_outline,
+                                trailing: const Icon(Icons.chevron_right),
+                                backgroundColor: AppTheme.primaryYellow
+                                    .withValues(alpha: 0.7),
+                                onTap:
+                                    () =>
+                                        Navigator.pushNamed(context, '/about'),
+                              ),
+
+                              InfoCard(
+                                title: 'Chính sách',
+                                icon: Icons.policy,
+                                trailing: const Icon(Icons.chevron_right),
+                                backgroundColor: AppTheme.primaryYellow
+                                    .withValues(alpha: 0.7),
+                                onTap:
+                                    () =>
+                                        Navigator.pushNamed(context, '/policy'),
+                              ),
+
+                              InfoCard(
+                                title: 'Điều khoản dịch vụ',
+                                icon: Icons.rule,
+                                trailing: const Icon(Icons.chevron_right),
+                                backgroundColor: AppTheme.primaryYellow
+                                    .withValues(alpha: 0.7),
+                                onTap:
+                                    () =>
+                                        Navigator.pushNamed(context, '/terms'),
+                              ),
+
+                              InfoCard(
+                                title: 'Đăng xuất',
+                                icon: Icons.logout,
+                                backgroundColor: AppTheme.primaryWhite,
+                                onTap: _logout,
+                              ),
+                            ],
+                          ),
                         ),
-                      ),
+
+                        const SizedBox(height: 20),
+                      ],
                     ),
-                  ],
+                  ),
                 ),
-              ),
+      ),
     );
   }
 }

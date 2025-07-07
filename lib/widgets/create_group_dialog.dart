@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:mewmail/services/mail_service.dart';
 import 'package:mewmail/services/user_service.dart';
+import 'package:mewmail/services/auth_service.dart';
 import 'package:mewmail/widgets/theme.dart';
 
 class CreateGroupDialog extends StatefulWidget {
@@ -141,13 +142,34 @@ class _CreateGroupDialogState extends State<CreateGroupDialog> {
         widget.onGroupCreated?.call();
       }
     } catch (e) {
+      debugPrint('❌ Lỗi _createGroup: $e');
+
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Lỗi tạo nhóm: $e'),
-            backgroundColor: AppTheme.primaryBlack,
-          ),
-        );
+        // If session expired, logout and redirect to login
+        if (AuthService.shouldRedirectToLogin(e.toString())) {
+          Navigator.pop(context); // Close dialog first
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Phiên đăng nhập hết hạn, vui lòng đăng nhập lại'),
+              backgroundColor: AppTheme.primaryYellow,
+            ),
+          );
+          await AuthService.logout();
+          if (mounted) {
+            Navigator.pushNamedAndRemoveUntil(
+              context,
+              '/login',
+              (route) => false,
+            );
+          }
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Lỗi tạo nhóm: $e'),
+              backgroundColor: AppTheme.primaryBlack,
+            ),
+          );
+        }
       }
     } finally {
       if (mounted) {

@@ -209,8 +209,8 @@ class _GmailDetailScreenState extends State<GmailDetailScreen> {
           mails.isNotEmpty
               ? (mails.first.subject.isNotEmpty
                   ? mails.first.subject
-                  : 'No Subject')
-              : 'Email Thread',
+                  : 'Không có tiêu đề')
+              : 'Chuỗi Email',
           style: const TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.w500,
@@ -478,42 +478,14 @@ class _GmailDetailScreenState extends State<GmailDetailScreen> {
                             children: [
                               Expanded(
                                 child: OutlinedButton.icon(
-                                  onPressed: () => _showReplyDialog(false),
+                                  onPressed: () => _showReplyDialog(),
                                   icon: const Icon(Icons.reply),
-                                  label: const Text('Reply'),
+                                  label: const Text('Trả lời'),
                                   style: OutlinedButton.styleFrom(
                                     foregroundColor: AppTheme.primaryBlack,
                                     side: const BorderSide(
                                       color: AppTheme.primaryBlack,
                                     ),
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(width: 8),
-                              Expanded(
-                                child: OutlinedButton.icon(
-                                  onPressed: () => _showReplyDialog(true),
-                                  icon: const Icon(Icons.reply_all),
-                                  label: const Text('Reply All'),
-                                  style: OutlinedButton.styleFrom(
-                                    foregroundColor: AppTheme.primaryBlack,
-                                    side: const BorderSide(
-                                      color: AppTheme.primaryBlack,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(width: 8),
-                              OutlinedButton.icon(
-                                onPressed: () {
-                                  // TODO: Forward email
-                                },
-                                icon: const Icon(Icons.forward),
-                                label: const Text('Forward'),
-                                style: OutlinedButton.styleFrom(
-                                  foregroundColor: AppTheme.primaryBlack,
-                                  side: const BorderSide(
-                                    color: AppTheme.primaryBlack,
                                   ),
                                 ),
                               ),
@@ -528,7 +500,7 @@ class _GmailDetailScreenState extends State<GmailDetailScreen> {
     );
   }
 
-  void _showReplyDialog(bool replyAll) {
+  void _showReplyDialog() {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -558,7 +530,7 @@ class _GmailDetailScreenState extends State<GmailDetailScreen> {
                   child: Row(
                     children: [
                       Text(
-                        replyAll ? 'Reply All' : 'Reply',
+                        'Trả lời',
                         style: const TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.w600,
@@ -619,7 +591,7 @@ class _GmailDetailScreenState extends State<GmailDetailScreen> {
                           child: Row(
                             children: [
                               const Text(
-                                'Subject: ',
+                                'Tiêu đề: ',
                                 style: TextStyle(fontWeight: FontWeight.w500),
                               ),
                               Expanded(
@@ -683,7 +655,7 @@ class _GmailDetailScreenState extends State<GmailDetailScreen> {
                                       ),
                                     )
                                     : const Text(
-                                      'Send',
+                                      'Gửi',
                                       style: TextStyle(
                                         fontSize: 16,
                                         fontWeight: FontWeight.w600,

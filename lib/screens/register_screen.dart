@@ -14,15 +14,15 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final _nameController = TextEditingController();
   final _passwordController = TextEditingController();
   final _rePasswordController = TextEditingController();
-  bool _obscure = true;
-  bool _obscureRe = true;
-  bool _loading = false;
+  final bool _obscure = true;
+  final bool _obscureRe = true;
+  final bool _loading = false;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final screenWidth = AppTheme.screenWidth(context);
-    final screenHeight = AppTheme.screenHeight(context);
+    final screenWidth = MediaQuery.of(context).size.width;
+    final screenHeight = MediaQuery.of(context).size.height;
 
     return Scaffold(
       body: SafeArea(
@@ -30,18 +30,18 @@ class _RegisterScreenState extends State<RegisterScreen> {
           child: Center(
             child: Column(
               children: [
-                SizedBox(height: AppTheme.responsiveHeight(context, 0.03)),
-                Text("Đăng ký", style: theme.textTheme.headlineLarge?.copyWith(fontFamily: 'Borel', fontSize: AppTheme.responsiveWidth(context, 0.08))),
-                Text("Tạo tài khoản tại đây", style: theme.textTheme.bodyLarge?.copyWith(fontSize: AppTheme.responsiveWidth(context, 0.045), color: AppTheme.primaryYellow)),
-                SizedBox(height: AppTheme.responsiveHeight(context, 0.02)),
-                Image.asset('assets/images/letter.png', width: AppTheme.responsiveWidth(context, 0.35)),
-                SizedBox(height: AppTheme.responsiveHeight(context, 0.01)),
+                SizedBox(height: screenHeight * 0.03),
+                Text("Đăng ký", style: theme.textTheme.headlineLarge?.copyWith(fontFamily: 'Borel', fontSize: screenWidth * 0.08)),
+                Text("Tạo tài khoản tại đây", style: theme.textTheme.bodyLarge?.copyWith(fontSize: screenWidth * 0.045, color: AppTheme.primaryYellow)),
+                SizedBox(height: screenHeight * 0.02),
+                Image.asset('assets/images/letter.png', width: screenWidth * 0.35),
+                SizedBox(height: screenHeight * 0.01),
                 const RegisterFormSection(),
                 const SizedBox(height: 8),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Text("Đã có tài khoản? ", style: theme.textTheme.bodyMedium?.copyWith(fontSize: AppTheme.responsiveWidth(context, 0.045), fontFamily: 'Borel')),
+                    Text("Đã có tài khoản? ", style: theme.textTheme.bodyMedium?.copyWith(fontSize: screenWidth * 0.045, fontFamily: 'Borel')),
                     GestureDetector(
                       onTap: () => Navigator.pushNamed(context, '/login'),
                       child: Text(
@@ -49,7 +49,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         style: theme.textTheme.bodyMedium?.copyWith(
                           color: AppTheme.primaryYellow,
                           fontWeight: FontWeight.bold,
-                          fontSize: AppTheme.responsiveWidth(context, 0.045),
+                          fontSize: screenWidth * 0.045,
                           decoration: TextDecoration.none,
                           fontFamily: 'Borel',
                         ),
@@ -57,8 +57,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     ),
                   ],
                 ),
-                SizedBox(height: AppTheme.responsiveHeight(context, 0.04)),
-                Image.asset('assets/images/middlecat.png', width: AppTheme.responsiveWidth(context, 0.35)),
+                SizedBox(height: screenHeight * 0.04),
+                Image.asset('assets/images/middlecat.png', width: screenWidth * 0.35),
               ],
             ),
           ),
