@@ -125,18 +125,39 @@ class AuthService {
 
       if (response.statusCode == 200) {
         // Đăng ký thành công, không cần lấy token ở đây
+        debugPrint('✅ Đăng ký thành công');
         return;
-      } else if (response.statusCode == 403) {
-        // Handle specific 403 errors - email already exists
-        throw Exception(
-          'Email này đã được đăng ký. Vui lòng sử dụng email khác hoặc đăng nhập.',
-        );
       } else {
-        final errorMessage =
-            responseBody.body.isEmpty
-                ? 'Lỗi server (${response.statusCode})'
-                : responseBody.body;
-        throw Exception('Đăng ký thất bại: $errorMessage');
+        // Parse error response
+        String errorMessage = 'Lỗi server (${response.statusCode})';
+
+        try {
+          final json = jsonDecode(responseBody.body);
+          if (json['message'] != null) {
+            errorMessage = json['message'];
+          }
+        } catch (e) {
+          // If JSON parsing fails, use raw body
+          if (responseBody.body.isNotEmpty) {
+            errorMessage = responseBody.body;
+          }
+        }
+
+        // Handle specific error cases
+        if (response.statusCode == 403 ||
+            response.statusCode == 409 ||
+            errorMessage.toLowerCase().contains('email') &&
+                (errorMessage.toLowerCase().contains('exist') ||
+                    errorMessage.toLowerCase().contains('đã') ||
+                    errorMessage.toLowerCase().contains('tồn tại'))) {
+          throw Exception(
+            'Email này đã được đăng ký. Vui lòng sử dụng email khác hoặc đăng nhập.',
+          );
+        } else if (response.statusCode == 400) {
+          throw Exception('Thông tin đăng ký không hợp lệ: $errorMessage');
+        } else {
+          throw Exception('Đăng ký thất bại: $errorMessage');
+        }
       }
     } catch (e) {
       debugPrint('❌ Lỗi đăng ký: $e');

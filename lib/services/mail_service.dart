@@ -293,7 +293,7 @@ class MailService {
     }
   }
 
-  static Future<void> createGroup({
+  static Future<int?> createGroup({
     required String token,
     required List<String> receiverEmails,
     required String subject,
@@ -302,18 +302,17 @@ class MailService {
       debugPrint(
         '👥 Gửi yêu cầu createGroup: emails=$receiverEmails, subject=$subject',
       );
+
+      // Build query parameters according to API doc
+      final uri = Uri.parse('$baseUrl/api/mail/creat-group').replace(
+        queryParameters: {
+          'subject': subject,
+          'receiverEmail': receiverEmails, // API expects array as query param
+        },
+      );
+
       final response = await http
-          .post(
-            Uri.parse('$baseUrl/api/mail/group'),
-            headers: {
-              'Authorization': 'Bearer $token',
-              'Content-Type': 'application/json',
-            },
-            body: jsonEncode({
-              'receiverEmails': receiverEmails,
-              'subject': subject,
-            }),
-          )
+          .post(uri, headers: {'Authorization': 'Bearer $token'})
           .timeout(const Duration(seconds: 15));
       debugPrint(
         '📬 Phản hồi createGroup: ${response.statusCode} - ${response.body}',
@@ -321,6 +320,17 @@ class MailService {
 
       if (response.statusCode == 200) {
         debugPrint('✅ Tạo group thành công');
+
+        // Parse response to get thread ID
+        try {
+          final json = jsonDecode(response.body);
+          final threadId = json['data'] as int?;
+          debugPrint('📧 Thread ID của nhóm mới: $threadId');
+          return threadId;
+        } catch (e) {
+          debugPrint('❌ Lỗi parse response createGroup: $e');
+          return null;
+        }
       } else if (response.statusCode == 403 || response.statusCode == 401) {
         debugPrint('❌ Lỗi xác thực: ${response.statusCode} - ${response.body}');
         final newToken = await AuthService.refreshTokenIfNeeded(token);

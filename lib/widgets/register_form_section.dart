@@ -80,6 +80,10 @@ class _RegisterFormSectionState extends State<RegisterFormSection> {
     }
     setState(() => _loading = true);
     try {
+      debugPrint('🔄 Bắt đầu đăng ký với email: $email');
+      debugPrint('🔄 Tên: $name, SĐT: $phone');
+      debugPrint('🔄 Avatar: ${_avatarFile?.path ?? "Không có"}');
+
       await AuthService.register(
         RegisterRequest(
           email: email,
@@ -89,27 +93,62 @@ class _RegisterFormSectionState extends State<RegisterFormSection> {
           avatar: _avatarFile,
         ),
       );
+
+      debugPrint('✅ Đăng ký thành công, bắt đầu đăng nhập tự động');
       // Đăng ký thành công, tự động đăng nhập
-      try {
-        await AuthService.login(LoginRequest(email: email, password: password));
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Đăng ký và đăng nhập thành công!')),
-        );
-        Navigator.pushNamedAndRemoveUntil(context, '/main', (route) => false);
-      } catch (e) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Đăng ký thành công, nhưng đăng nhập thất bại: $e'),
-          ),
-        );
-        Navigator.pushNamedAndRemoveUntil(context, '/login', (route) => false);
+      if (mounted) {
+        try {
+          await AuthService.login(
+            LoginRequest(email: email, password: password),
+          );
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Đăng ký và đăng nhập thành công!')),
+            );
+            Navigator.pushNamedAndRemoveUntil(
+              context,
+              '/main',
+              (route) => false,
+            );
+          }
+        } catch (e) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(
+                  'Đăng ký thành công, nhưng đăng nhập thất bại: $e',
+                ),
+              ),
+            );
+            Navigator.pushNamedAndRemoveUntil(
+              context,
+              '/login',
+              (route) => false,
+            );
+          }
+        }
       }
     } catch (e, stack) {
-      print('Đăng ký thất bại: $e');
-      print(stack);
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Đăng ký thất bại: $e')));
+      debugPrint('❌ Đăng ký thất bại: $e');
+      debugPrint('❌ Stack trace: $stack');
+
+      // Extract meaningful error message
+      String errorMessage = e.toString();
+      if (errorMessage.startsWith('Exception: ')) {
+        errorMessage = errorMessage.substring(
+          11,
+        ); // Remove "Exception: " prefix
+      }
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(errorMessage),
+            backgroundColor: AppTheme.primaryBlack,
+            duration: const Duration(seconds: 4),
+          ),
+        );
+      }
     } finally {
       setState(() => _loading = false);
     }

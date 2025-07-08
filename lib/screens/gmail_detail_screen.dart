@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:mewmail/services/mail_service.dart';
 import 'package:mewmail/services/avatar_service.dart';
+import 'package:mewmail/services/file_service.dart';
 import 'package:mewmail/models/mail/mail_detail.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:intl/intl.dart';
@@ -8,6 +9,7 @@ import 'package:mewmail/widgets/theme.dart';
 import 'package:html/parser.dart' as html_parser;
 import 'package:mewmail/widgets/common/skeleton_loading.dart';
 import 'package:mewmail/widgets/common/animated_widgets.dart';
+import 'package:image_picker/image_picker.dart';
 
 class GmailDetailScreen extends StatefulWidget {
   final int threadId;
@@ -24,6 +26,8 @@ class _GmailDetailScreenState extends State<GmailDetailScreen> {
   final _replyController = TextEditingController();
   bool _isSending = false;
   String? myEmail;
+  String? _replyAttachmentPath;
+  String? _replyAttachmentName;
 
   @override
   void initState() {
@@ -81,12 +85,28 @@ class _GmailDetailScreenState extends State<GmailDetailScreen> {
       final prefs = await SharedPreferences.getInstance();
       final token = prefs.getString('token');
       if (token == null) throw Exception('Vui lòng đăng nhập lại');
+
+      String? fileUrl;
+      if (_replyAttachmentPath != null) {
+        // Upload file first
+        fileUrl = await FileService.uploadFile(
+          token: token,
+          filePath: _replyAttachmentPath!,
+        );
+      }
+
       await MailService.replyMail(
         token: token,
         threadId: widget.threadId,
         content: content,
+        filePath: fileUrl, // Pass the uploaded file URL
       );
       _replyController.clear();
+      // Clear attachment after successful send
+      setState(() {
+        _replyAttachmentPath = null;
+        _replyAttachmentName = null;
+      });
       await _loadThread();
     } catch (e) {
       if (mounted) {
@@ -191,6 +211,66 @@ class _GmailDetailScreenState extends State<GmailDetailScreen> {
   void dispose() {
     _replyController.dispose();
     super.dispose();
+  }
+
+  Future<void> _pickReplyFile() async {
+    try {
+      // Show dialog to choose between camera and gallery
+      final ImageSource? source = await showDialog<ImageSource>(
+        context: context,
+        builder:
+            (context) => AlertDialog(
+              title: const Text('Chọn ảnh'),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  ListTile(
+                    leading: const Icon(Icons.camera_alt),
+                    title: const Text('Chụp ảnh'),
+                    onTap: () => Navigator.pop(context, ImageSource.camera),
+                  ),
+                  ListTile(
+                    leading: const Icon(Icons.photo_library),
+                    title: const Text('Thư viện ảnh'),
+                    onTap: () => Navigator.pop(context, ImageSource.gallery),
+                  ),
+                ],
+              ),
+            ),
+      );
+
+      if (source != null) {
+        final picker = ImagePicker();
+        final image = await picker.pickImage(
+          source: source,
+          maxWidth: 1920,
+          maxHeight: 1080,
+          imageQuality: 85,
+        );
+
+        if (image != null && mounted) {
+          setState(() {
+            _replyAttachmentPath = image.path;
+            _replyAttachmentName = image.name;
+          });
+          debugPrint('✅ Đã chọn ảnh reply: ${image.name} (${image.path})');
+        }
+      }
+    } catch (e) {
+      debugPrint('❌ Lỗi chọn ảnh reply: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Lỗi chọn ảnh: $e')));
+      }
+    }
+  }
+
+  void _removeReplyAttachment() {
+    setState(() {
+      _replyAttachmentPath = null;
+      _replyAttachmentName = null;
+    });
   }
 
   @override
@@ -620,6 +700,91 @@ class _GmailDetailScreenState extends State<GmailDetailScreen> {
                             maxLines: null,
                             expands: true,
                             textAlignVertical: TextAlignVertical.top,
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        // Attachment section
+                        Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: AppTheme.primaryYellow.withValues(
+                              alpha: 0.05,
+                            ),
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(
+                              color: AppTheme.primaryBlack.withValues(
+                                alpha: 0.3,
+                              ),
+                            ),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text(
+                                'Đính kèm',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.w500,
+                                  fontSize: 14,
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              SizedBox(
+                                width: double.infinity,
+                                child: OutlinedButton.icon(
+                                  onPressed: _pickReplyFile,
+                                  icon: const Icon(Icons.photo_camera),
+                                  label: const Text('Chọn ảnh từ thiết bị'),
+                                  style: OutlinedButton.styleFrom(
+                                    foregroundColor: AppTheme.primaryYellow,
+                                    side: const BorderSide(
+                                      color: AppTheme.primaryYellow,
+                                    ),
+                                    padding: const EdgeInsets.symmetric(
+                                      vertical: 8,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              // Show selected attachment
+                              if (_replyAttachmentName != null) ...[
+                                const SizedBox(height: 8),
+                                Container(
+                                  padding: const EdgeInsets.all(8),
+                                  decoration: BoxDecoration(
+                                    color: AppTheme.primaryYellow.withValues(
+                                      alpha: 0.1,
+                                    ),
+                                    borderRadius: BorderRadius.circular(6),
+                                    border: Border.all(
+                                      color: AppTheme.primaryYellow.withValues(
+                                        alpha: 0.3,
+                                      ),
+                                    ),
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      const Icon(Icons.attach_file, size: 16),
+                                      const SizedBox(width: 8),
+                                      Expanded(
+                                        child: Text(
+                                          _replyAttachmentName!,
+                                          style: const TextStyle(fontSize: 12),
+                                        ),
+                                      ),
+                                      IconButton(
+                                        onPressed: _removeReplyAttachment,
+                                        icon: const Icon(Icons.close, size: 16),
+                                        constraints: const BoxConstraints(
+                                          minWidth: 24,
+                                          minHeight: 24,
+                                        ),
+                                        padding: EdgeInsets.zero,
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ],
                           ),
                         ),
                         const SizedBox(height: 16),

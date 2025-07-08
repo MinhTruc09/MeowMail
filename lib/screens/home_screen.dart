@@ -30,11 +30,188 @@ class _HomeScreenState extends State<HomeScreen> {
   final int _limit = 10;
   String? myEmail;
 
+  // Cache for thread details to get accurate receiver info
+  final Map<int, String> _threadReceiverCache = {};
+  final Set<int> _loadingThreads = {};
+
   @override
   void initState() {
     super.initState();
     _loadMyEmail();
     _loadData();
+  }
+
+  // Method to get accurate receiver info from thread detail
+  Future<String> _getAccurateReceiver(int threadId) async {
+    // Check cache first
+    if (_threadReceiverCache.containsKey(threadId)) {
+      return _threadReceiverCache[threadId]!;
+    }
+
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('token');
+      if (token == null) return 'Không rõ';
+
+      final mails = await MailService.getThreadDetail(token, threadId);
+
+      // Find the first mail I sent to get the receiver
+      for (final mail in mails) {
+        if (mail.senderEmail == myEmail &&
+            mail.receiverEmail != null &&
+            mail.receiverEmail!.isNotEmpty &&
+            mail.receiverEmail != 'Nhóm' &&
+            mail.receiverEmail != '(không xác định)') {
+          // Cache the result
+          _threadReceiverCache[threadId] = mail.receiverEmail!;
+          return mail.receiverEmail!;
+        }
+      }
+
+      // If no direct receiver found, try to get from any mail in thread
+      for (final mail in mails) {
+        if (mail.receiverEmail != null &&
+            mail.receiverEmail!.isNotEmpty &&
+            mail.receiverEmail != 'Nhóm' &&
+            mail.receiverEmail != '(không xác định)' &&
+            mail.receiverEmail != myEmail) {
+          // Cache the result
+          _threadReceiverCache[threadId] = mail.receiverEmail!;
+          return mail.receiverEmail!;
+        }
+      }
+
+      return 'Người nhận';
+    } catch (e) {
+      debugPrint('❌ Lỗi get accurate receiver: $e');
+      return 'Người nhận';
+    }
+  }
+
+  // Helper method to get the display email (who to show in the conversation)
+  String _getDisplayEmail(InboxThread thread) {
+    if (myEmail == null) return thread.lastSenderEmail ?? 'Không rõ';
+
+    // Debug: Print thread info (commented out to reduce log spam)
+    // debugPrint(
+    //   '🔍 Thread Debug: ID=${thread.threadId}, Title="${thread.title}", Subject="${thread.subject}"',
+    // );
+    // debugPrint(
+    //   '🔍 Sender: ${thread.lastSenderEmail}, Receiver: ${thread.lastReceiverEmail}',
+    // );
+    // debugPrint('🔍 Group Members: ${thread.groupMembers}');
+    // debugPrint('🔍 My Email: $myEmail');
+
+    // If I sent the email, show the receiver
+    if (thread.lastSenderEmail == myEmail) {
+      debugPrint(
+        '📤 Tôi gửi: ${thread.lastSenderEmail} -> ${thread.lastReceiverEmail}',
+      );
+
+      // Check if receiver email is valid
+      final receiverEmail = thread.lastReceiverEmail;
+      if (receiverEmail == null ||
+          receiverEmail.isEmpty ||
+          receiverEmail == '(không xác định)' ||
+          receiverEmail == 'null') {
+        // Try to get accurate receiver from thread detail
+        debugPrint(
+          '🔄 Getting accurate receiver for thread ${thread.threadId}',
+        );
+
+        // Check cache first
+        if (_threadReceiverCache.containsKey(thread.threadId)) {
+          return _threadReceiverCache[thread.threadId]!;
+        }
+
+        // Load accurate receiver in background (only if not already loading)
+        if (!_loadingThreads.contains(thread.threadId)) {
+          _loadingThreads.add(thread.threadId);
+          _getAccurateReceiver(thread.threadId)
+              .then((accurateReceiver) {
+                _loadingThreads.remove(thread.threadId);
+                if (mounted && accurateReceiver != 'Người nhận') {
+                  // Update the UI if we found a better receiver
+                  setState(() {
+                    // The UI will rebuild and use the cached value
+                  });
+                }
+              })
+              .catchError((error) {
+                _loadingThreads.remove(thread.threadId);
+                debugPrint('❌ Lỗi load accurate receiver: $error');
+              });
+        }
+
+        // Try to get from group members if it's a group
+        if (thread.groupMembers != null && thread.groupMembers!.isNotEmpty) {
+          // Return first group member that's not me
+          for (final member in thread.groupMembers!) {
+            if (member != myEmail && member.isNotEmpty) {
+              return member;
+            }
+          }
+        }
+
+        // If receiver is unknown, try to get from thread title or subject
+        final title = thread.title ?? '';
+        final subject = thread.subject ?? '';
+
+        // Extract email from title or subject if possible
+        final emailRegex = RegExp(
+          r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b',
+        );
+        final titleMatch = emailRegex.firstMatch(title);
+        final subjectMatch = emailRegex.firstMatch(subject);
+
+        if (titleMatch != null) {
+          return titleMatch.group(0)!;
+        } else if (subjectMatch != null) {
+          return subjectMatch.group(0)!;
+        } else {
+          return 'Người nhận';
+        }
+      }
+
+      return receiverEmail;
+    }
+
+    // If someone sent to me, show the sender
+    debugPrint('📥 Nhận từ: ${thread.lastSenderEmail} -> ${myEmail}');
+    return thread.lastSenderEmail ?? 'Không rõ';
+  }
+
+  // Helper method to get display name from email
+  String _getDisplayName(String email) {
+    if (email == 'Không rõ' ||
+        email.isEmpty ||
+        email == 'Người nhận' ||
+        email == '(không xác định)') {
+      return email;
+    }
+
+    // Extract name from email (part before @)
+    if (email.contains('@')) {
+      return email.split('@')[0];
+    }
+
+    return email;
+  }
+
+  // Helper method to get display name with prefix (To: or From:)
+  String _getDisplayNameWithPrefix(InboxThread thread) {
+    if (myEmail == null) return _getDisplayName(thread.lastSenderEmail ?? '');
+
+    final displayEmail = _getDisplayEmail(thread);
+    final displayName = _getDisplayName(displayEmail);
+
+    // If I sent the email, show "Đến: [receiver name]"
+    if (thread.lastSenderEmail == myEmail) {
+      return 'Đến: $displayName';
+    }
+
+    // If someone sent to me, just show sender name
+    return displayName;
   }
 
   Future<void> _loadMyEmail() async {
@@ -121,6 +298,10 @@ class _HomeScreenState extends State<HomeScreen> {
         limit: _limit,
       ).timeout(const Duration(seconds: 15));
       debugPrint('✅ Đã nhận được ${threads.length} threads từ API');
+
+      // Debug: Log thread IDs để track
+      final threadIds = threads.map((t) => t.threadId).toList();
+      debugPrint('📋 Thread IDs từ API: $threadIds');
 
       // Sắp xếp theo thời gian mới nhất trước
       threads.sort((a, b) {
@@ -420,13 +601,65 @@ class _HomeScreenState extends State<HomeScreen> {
               ],
             ),
           ),
-          onDismissed: (direction) {
-            if (direction == DismissDirection.startToEnd) {
-              // Swipe right - Mark as spam
-              _markAsSpam([thread.threadId]);
-            } else if (direction == DismissDirection.endToStart) {
-              // Swipe left - Delete
-              _deleteThreads([thread.threadId]);
+          confirmDismiss: (direction) async {
+            // Always allow dismiss - the action will be handled in onDismissed
+            return true;
+          },
+          onDismissed: (direction) async {
+            // Store the thread for potential restoration
+            final removedThread = thread;
+
+            // Remove from local list immediately for better UX
+            setState(() {
+              inboxThreads.removeWhere((t) => t.threadId == thread.threadId);
+            });
+
+            try {
+              if (direction == DismissDirection.startToEnd) {
+                // Swipe right - Mark as spam
+                await _markAsSpam([thread.threadId]);
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Đã đánh dấu email là spam'),
+                      backgroundColor: AppTheme.primaryYellow,
+                      duration: Duration(seconds: 2),
+                    ),
+                  );
+                }
+              } else if (direction == DismissDirection.endToStart) {
+                // Swipe left - Delete
+                await _deleteThreads([thread.threadId]);
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Đã xóa email'),
+                      backgroundColor: AppTheme.primaryBlack,
+                      duration: Duration(seconds: 2),
+                    ),
+                  );
+                }
+              }
+            } catch (e) {
+              // If API call fails, restore the item
+              if (mounted) {
+                setState(() {
+                  inboxThreads.add(removedThread);
+                  inboxThreads.sort(
+                    (a, b) => (b.lastCreatedAt?.toString() ?? '').compareTo(
+                      a.lastCreatedAt?.toString() ?? '',
+                    ),
+                  );
+                });
+
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('Lỗi: $e'),
+                    backgroundColor: Colors.red,
+                    duration: const Duration(seconds: 3),
+                  ),
+                );
+              }
             }
           },
           child: Container(
@@ -465,15 +698,15 @@ class _HomeScreenState extends State<HomeScreen> {
                       // Header với avatar và thông tin người gửi
                       Row(
                         children: [
-                          // Avatar người gửi
+                          // Avatar người hiển thị
                           CircleAvatar(
                             radius: 20,
                             backgroundColor: AvatarService.getAvatarColor(
-                              thread.lastSenderEmail ?? 'unknown',
+                              _getDisplayEmail(thread),
                             ),
                             child: Text(
                               AvatarService.getAvatarInitials(
-                                thread.lastSenderEmail ?? 'U',
+                                _getDisplayEmail(thread),
                               ),
                               style: const TextStyle(
                                 color: AppTheme.primaryWhite,
@@ -492,7 +725,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                   children: [
                                     Expanded(
                                       child: Text(
-                                        thread.lastSenderEmail ?? 'Không rõ',
+                                        _getDisplayNameWithPrefix(thread),
                                         style: TextStyle(
                                           fontSize: 14,
                                           fontWeight:
@@ -777,18 +1010,15 @@ class _HomeScreenState extends State<HomeScreen> {
       await MailService.spamMail(token: token, threadIds: threadIds);
 
       debugPrint('✅ Đã đánh dấu ${threadIds.length} threads là spam qua API');
+      debugPrint('🔄 Threads đã spam: $threadIds');
 
       // Refresh data to get updated list from server
+      debugPrint('🔄 Bắt đầu refresh data sau khi spam...');
       await _loadData(force: true);
+      debugPrint('✅ Hoàn thành refresh data sau spam');
 
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Đã đánh dấu email là spam'),
-            backgroundColor: AppTheme.primaryYellow,
-          ),
-        );
-      }
+      // Don't show SnackBar here as it's called from swipe gesture
+      // The item is already removed from UI
     } catch (e) {
       debugPrint('❌ Lỗi _markAsSpam: $e');
 
@@ -831,18 +1061,15 @@ class _HomeScreenState extends State<HomeScreen> {
       await MailService.deleteThreads(token: token, threadIds: threadIds);
 
       debugPrint('✅ Đã xóa ${threadIds.length} threads qua API');
+      debugPrint('🔄 Threads đã xóa: $threadIds');
 
       // Refresh data to get updated list from server
+      debugPrint('🔄 Bắt đầu refresh data sau khi xóa...');
       await _loadData(force: true);
+      debugPrint('✅ Hoàn thành refresh data sau xóa');
 
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Đã xóa email'),
-            backgroundColor: AppTheme.primaryBlack,
-          ),
-        );
-      }
+      // Don't show SnackBar here as it's called from swipe gesture
+      // The item is already removed from UI
     } catch (e) {
       debugPrint('❌ Lỗi _deleteThreads: $e');
 

@@ -113,6 +113,16 @@ class _CreateGroupDialogState extends State<CreateGroupDialog> {
       return;
     }
 
+    if (_selectedEmails.length < 2) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Nhóm cần ít nhất 2 thành viên'),
+          backgroundColor: AppTheme.primaryBlack,
+        ),
+      );
+      return;
+    }
+
     setState(() {
       _isCreating = true;
     });
@@ -125,7 +135,7 @@ class _CreateGroupDialogState extends State<CreateGroupDialog> {
         throw Exception('Please log in again');
       }
 
-      await MailService.createGroup(
+      final threadId = await MailService.createGroup(
         token: token,
         receiverEmails: _selectedEmails,
         subject: _subjectController.text.trim(),
@@ -133,12 +143,23 @@ class _CreateGroupDialogState extends State<CreateGroupDialog> {
 
       if (mounted) {
         Navigator.pop(context);
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Tạo nhóm email thành công!'),
-            backgroundColor: AppTheme.primaryYellow,
-          ),
-        );
+
+        if (threadId != null) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Tạo nhóm email thành công! Thread ID: $threadId'),
+              backgroundColor: AppTheme.primaryYellow,
+            ),
+          );
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Tạo nhóm email thành công!'),
+              backgroundColor: AppTheme.primaryYellow,
+            ),
+          );
+        }
+
         widget.onGroupCreated?.call();
       }
     } catch (e) {
