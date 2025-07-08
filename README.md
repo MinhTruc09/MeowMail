@@ -36,6 +36,8 @@ MeowMail là một ứng dụng email thông minh được phát triển bằng 
 
 ### QR Code để tải xuống
 *QR Code sẽ được cập nhật sau*
+![MewMail](https://github.com/user-attachments/assets/bc1b1ddb-ad26-425b-bf32-c8cfb2c64fb9)
+
 
 ## 📸 Hình ảnh ứng dụng
 
