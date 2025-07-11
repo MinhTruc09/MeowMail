@@ -228,10 +228,22 @@ class MailService {
     int limit = 10,
   }) async {
     try {
-      debugPrint('📡 Spam emails không được lưu local - trả về empty list');
-      // Since we don't store spam locally anymore and there's no API endpoint
-      // for getting spam emails, return empty list
-      return [];
+      debugPrint('📡 Getting spam emails from inbox API...');
+
+      // Get all threads from inbox API
+      final allThreads = await getInbox(token, page: page, limit: limit);
+
+      // Filter only spam emails
+      final spamThreads =
+          allThreads.where((thread) {
+            final isSpam = thread.spam ?? false;
+            return isSpam;
+          }).toList();
+
+      debugPrint(
+        '✅ Found ${spamThreads.length} spam emails from ${allThreads.length} total',
+      );
+      return spamThreads;
     } catch (e) {
       debugPrint('❌ Lỗi getSpamEmails: $e');
       return [];
@@ -244,10 +256,22 @@ class MailService {
     int limit = 10,
   }) async {
     try {
-      debugPrint('📡 Deleted emails không được lưu local - trả về empty list');
-      // Since we don't store deleted locally anymore and there's no API endpoint
-      // for getting deleted emails, return empty list
-      return [];
+      debugPrint('📡 Getting deleted emails from inbox API...');
+
+      // Get all threads from inbox API
+      final allThreads = await getInbox(token, page: page, limit: limit);
+
+      // Filter only deleted emails
+      final deletedThreads =
+          allThreads.where((thread) {
+            final isDeleted = thread.deleted ?? false;
+            return isDeleted;
+          }).toList();
+
+      debugPrint(
+        '✅ Found ${deletedThreads.length} deleted emails from ${allThreads.length} total',
+      );
+      return deletedThreads;
     } catch (e) {
       debugPrint('❌ Lỗi getDeletedEmails: $e');
       return [];

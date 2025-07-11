@@ -303,14 +303,26 @@ class _HomeScreenState extends State<HomeScreen> {
       final threadIds = threads.map((t) => t.threadId).toList();
       debugPrint('📋 Thread IDs từ API: $threadIds');
 
+      // Filter out deleted and spam emails for home screen
+      final filteredThreads =
+          threads.where((thread) {
+            final isDeleted = thread.deleted ?? false;
+            final isSpam = thread.spam ?? false;
+
+            // Only show emails that are NOT deleted and NOT spam
+            return !isDeleted && !isSpam;
+          }).toList();
+
+      debugPrint(
+        '🔍 Filtered: ${threads.length} → ${filteredThreads.length} threads (removed deleted/spam)',
+      );
+
       // Sắp xếp theo thời gian mới nhất trước
-      threads.sort((a, b) {
+      filteredThreads.sort((a, b) {
         final aTime = a.lastCreatedAt ?? DateTime.now();
         final bTime = b.lastCreatedAt ?? DateTime.now();
         return bTime.compareTo(aTime); // Mới nhất trước
       });
-
-      final filteredThreads = threads;
 
       debugPrint('✅ Hiển thị ${filteredThreads.length} threads từ API');
 
